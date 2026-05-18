@@ -13,6 +13,13 @@ const TIMEOUT_OPTIONS: { label: string; value: number }[] = [
   { label: "Never", value: 0 },
 ];
 
+const CLIPBOARD_OPTIONS: { label: string; value: number }[] = [
+  { label: "15 seconds", value: 15 },
+  { label: "30 seconds", value: 30 },
+  { label: "1 minute", value: 60 },
+  { label: "Never", value: 0 },
+];
+
 export default function SecurityScreen() {
   const navigate = useNavigate();
   useAutoLock();
@@ -20,6 +27,7 @@ export default function SecurityScreen() {
   const autoLockMinutes = usePersistedStore((s) => s.settings.autoLockMinutes);
   const lockOnWindowBlur = usePersistedStore((s) => s.settings.lockOnWindowBlur);
   const lockOnSleep = usePersistedStore((s) => s.settings.lockOnSleep);
+  const clipboardClearSeconds = usePersistedStore((s) => s.settings.clipboardClearSeconds);
   const updateSettings = usePersistedStore((s) => s.updateSettings);
 
   function setLockTimeout(minutes: number) {
@@ -159,6 +167,49 @@ export default function SecurityScreen() {
             [PARANOID MODE — app locks every time you switch windows]
           </div>
         )}
+      </div>
+
+      {/* Clipboard clear timeout */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+        <div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: "var(--color-text-primary)" }}>
+            Clipboard clear timeout
+          </div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", color: "var(--color-text-secondary)", marginTop: "var(--space-1)" }}>
+            Automatically clear copied addresses after this time
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          {CLIPBOARD_OPTIONS.map((opt) => {
+            const isSelected = opt.value === clipboardClearSeconds;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => updateSettings({ clipboardClearSeconds: opt.value })}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "var(--space-3) var(--space-4)",
+                  background: "none",
+                  border: `1px solid ${isSelected ? "var(--color-text-display)" : "var(--color-border-strong)"}`,
+                  borderRadius: "var(--radius-sharp)",
+                  cursor: "pointer",
+                  width: "100%",
+                }}
+              >
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: isSelected ? "var(--color-text-display)" : "var(--color-text-primary)" }}>
+                  {opt.label}
+                </span>
+                {isSelected && (
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-display)", letterSpacing: "0.05em" }}>
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
     </AppShell>
