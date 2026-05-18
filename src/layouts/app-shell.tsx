@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { useLockCountdown } from "@/hooks/use-lock-countdown";
 
 export interface AppShellProps {
   children: ReactNode;
@@ -8,6 +9,8 @@ export interface AppShellProps {
 }
 
 export function AppShell({ children, statusBar, bottomNav, contentStyle }: AppShellProps) {
+  const countdown = useLockCountdown();
+
   return (
     <div
       style={{
@@ -31,6 +34,24 @@ export function AppShell({ children, statusBar, bottomNav, contentStyle }: AppSh
         >
           {statusBar}
         </header>
+      )}
+
+      {countdown !== null && (
+        <div
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "var(--space-1) var(--space-4)",
+            background: "var(--color-bg-elevated)",
+            borderBottom: "1px solid var(--color-border-subtle)",
+          }}
+        >
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-status-warning)", letterSpacing: "0.05em" }}>
+            [LOCKING IN {countdown}s]
+          </span>
+        </div>
       )}
 
       <main
