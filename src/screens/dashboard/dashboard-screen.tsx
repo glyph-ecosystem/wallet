@@ -11,6 +11,8 @@ import { useBalance } from "@/hooks/use-balance";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { useNetworkHealth } from "@/hooks/use-network-health";
 import { useAutoLock } from "@/hooks/use-auto-lock";
+import { useTxHistory } from "@/hooks/use-tx-history";
+import { Divider } from "@/components/divider";
 
 const VAULT_COLOR_CSS: Record<string, string> = {
   slate: "var(--color-vault-slate)",
@@ -205,12 +207,8 @@ export default function DashboardScreen() {
           </div>
         )}
 
-        {/* Transaction history placeholder */}
-        <div style={{ textAlign: "center", padding: "var(--space-12) 0" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
-            [NO TRANSACTIONS YET]
-          </span>
-        </div>
+        {/* Recent transactions */}
+        <RecentTxs identity={identity} activeIdentity={identity} hideBalances={settings.hideBalances} onViewAll={() => navigate("/history")} />
 
       </div>
 
@@ -234,6 +232,113 @@ export default function DashboardScreen() {
         </div>
       </Modal>
     </AppShell>
+  );
+}
+
+function truncate(id: string): string {
+  if (!id || id.length <= 16) return id;
+  return `${id.slice(0, 8)}...${id.slice(-8)}`;
+}
+
+function formatAmount(amount: string | undefined): string {
+  if (!amount) return "—";
+  return BigInt(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+interface RecentTxsProps {
+  identity: string | null;
+  activeIdentity: string | null;
+  hideBalances: boolean;
+  onViewAll: () => void;
+}
+
+function RecentTxs({ identity, activeIdentity, hideBalances, onViewAll }: RecentTxsProps) {
+  const { data: txs, isLoading } = useTxHistory(identity);
+  const pendingTxs = usePersistedStore((s) => s.pendingTxs);
+
+  const myPending = pendingTxs
+    .filter((p) => p.source === activeIdentity || p.destination === activeIdentity)
+    .slice(0, 3);
+
+  const recent = (txs ?? []).slice(0, 5 - Math.min(myPending.length, 3));
+  const hasAny = myPending.length > 0 || recent.length > 0;
+
+  if (isLoading && !hasAny) {
+    return (
+      <div style={{ textAlign: "center", padding: "var(--space-8) 0" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
+          [LOADING...]
+        </span>
+      </div>
+    );
+  }
+
+  if (!hasAny) {
+    return (
+      <div style={{ textAlign: "center", padding: "var(--space-8) 0" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
+          [NO TRANSACTIONS YET]
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+      {myPending.map((p, i) => {
+        const isIn = p.destination === activeIdentity;
+        return (
+          <div key={p.hash}>
+            {i > 0 && <Divider style={{ marginBottom: "var(--space-3)" }} />}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
+                <Tag variant="warning">PENDING</Tag>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
+                  {truncate(isIn ? p.source : p.destination)}
+                </span>
+              </div>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: "var(--color-status-warning)" }}>
+                {hideBalances ? "••••••" : `${isIn ? "+" : "−"}${formatAmount(p.amount)}`}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+
+      {recent.map((tx, i) => {
+        const isIn = tx.destination === activeIdentity;
+        const flew = tx.moneyFlew ?? true;
+        const statusVariant = flew ? (isIn ? "success" : "neutral") : "error";
+        const statusLabel = flew ? (isIn ? "RECEIVED" : "SENT") : "FAILED";
+        const amountColor = flew
+          ? isIn ? "var(--color-status-success)" : "var(--color-text-primary)"
+          : "var(--color-text-disabled)";
+        const offset = myPending.length + i;
+        return (
+          <div key={tx.hash ?? i}>
+            {offset > 0 && <Divider style={{ marginBottom: "var(--space-3)" }} />}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
+                <Tag variant={statusVariant}>{statusLabel}</Tag>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
+                  {truncate(isIn ? (tx.source ?? "—") : (tx.destination ?? "—"))}
+                </span>
+              </div>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: amountColor }}>
+                {hideBalances ? "••••••" : `${isIn ? "+" : "−"}${formatAmount(tx.amount)}`}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+
+      <button
+        onClick={onViewAll}
+        style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", padding: "var(--space-2) 0", textAlign: "right" }}
+      >
+        VIEW ALL →
+      </button>
+    </div>
   );
 }
 

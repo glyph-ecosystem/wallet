@@ -31,7 +31,7 @@ export default function NetworkScreen() {
       const client = createQubicClient({ liveBaseUrl: liveUrl.trim(), archiveBaseUrl: queryUrl.trim() });
       const result = await client.live.getTickInfo();
       if (!result.ok) throw new Error("bad response");
-      setTestTick(result.value.tick);
+      setTestTick(result.value.tick ?? null);
       setTestStatus("ok");
       configureRpc(liveUrl.trim(), queryUrl.trim());
       updateSettings({ network: { ...settings.network, liveApiUrl: liveUrl.trim(), queryApiUrl: queryUrl.trim() } });
