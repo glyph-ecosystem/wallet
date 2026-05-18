@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/layouts/app-shell";
@@ -18,6 +19,8 @@ export default function ReceiveScreen() {
   const wallet = wallets[activeIndex] ?? null;
   const identity = wallet?.identity ?? null;
   const accountName = vault?.accounts[activeIndex]?.name ?? `Account ${activeIndex + 1}`;
+  const hideBalances = settings.hideBalances;
+  const [qrRevealed, setQrRevealed] = useState(false);
 
   const statusBar = (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
@@ -39,19 +42,34 @@ export default function ReceiveScreen() {
 
       {identity ? (
         <>
-          <div style={{
-            background: "var(--color-bg-elevated)",
-            border: "1px solid var(--color-border-strong)",
-            borderRadius: "var(--radius-sharp)",
-            padding: "var(--space-4)",
-          }}>
+          <div
+            style={{
+              background: "var(--color-bg-elevated)",
+              border: "1px solid var(--color-border-strong)",
+              borderRadius: "var(--radius-sharp)",
+              padding: "var(--space-4)",
+              position: "relative",
+              cursor: hideBalances && !qrRevealed ? "pointer" : "default",
+            }}
+            onMouseEnter={() => hideBalances && setQrRevealed(true)}
+            onMouseLeave={() => hideBalances && setQrRevealed(false)}
+            onClick={() => hideBalances && setQrRevealed((v) => !v)}
+          >
             <QRCodeSVG
               value={identity}
               size={200}
               bgColor="transparent"
               fgColor="var(--color-text-display)"
               level="M"
+              style={{ display: "block", filter: hideBalances && !qrRevealed ? "blur(12px)" : "none", transition: "filter 0.15s ease" }}
             />
+            {hideBalances && !qrRevealed && (
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em" }}>
+                  HOVER TO REVEAL
+                </span>
+              </div>
+            )}
           </div>
 
           <IdentityDisplay identity={identity} style={{ textAlign: "center", maxWidth: 300 }} />
