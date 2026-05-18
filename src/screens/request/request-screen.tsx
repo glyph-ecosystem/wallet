@@ -7,6 +7,7 @@ import { Tag } from "@/components/tag";
 import { Divider } from "@/components/divider";
 import { RequestHeader } from "@/components/request/request-header";
 import { TransferPreview, type ApproveResult } from "@/components/request/transfer-preview";
+import { ScCallPreview } from "@/components/request/sc-call-preview";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
 import { useAutoLock } from "@/hooks/use-auto-lock";
@@ -200,6 +201,12 @@ export default function RequestScreen() {
       {request.type === "transfer" ? (
         <TransferPreview
           request={request as unknown as Parameters<typeof TransferPreview>[0]["request"]}
+          onApprove={handleApprove}
+          onReject={reject}
+        />
+      ) : request.type === "sc_call" ? (
+        <ScCallPreview
+          request={request as unknown as Parameters<typeof ScCallPreview>[0]["request"]}
           onApprove={handleApprove}
           onReject={reject}
         />
