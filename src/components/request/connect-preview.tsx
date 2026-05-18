@@ -1,0 +1,129 @@
+import { useState } from "react";
+import { Button } from "@/components/button";
+import { useSessionStore } from "@/store/session";
+import { usePersistedStore } from "@/store/persisted";
+
+export interface ConnectRequest {
+  permissions?: ("transfer" | "sc_call" | "sign_message")[];
+  [key: string]: unknown;
+}
+
+export interface ConnectApproveResult {
+  identity: string;
+  permissions: ("transfer" | "sc_call" | "sign_message")[];
+}
+
+interface ConnectPreviewProps {
+  dappName: string;
+  dappOrigin: string;
+  request: ConnectRequest;
+  onApprove: (result: ConnectApproveResult) => void;
+  onReject: () => void;
+}
+
+const PERMISSION_LABELS: Record<string, string> = {
+  transfer: "Transfer QU",
+  sc_call: "Contract calls",
+  sign_message: "Sign messages",
+};
+
+function truncate(id: string): string {
+  if (!id || id.length <= 20) return id;
+  return `${id.slice(0, 10)}...${id.slice(-10)}`;
+}
+
+export function ConnectPreview({ dappName, dappOrigin, request, onApprove, onReject }: ConnectPreviewProps) {
+  const wallets = useSessionStore((s) => s.wallets);
+  const settings = usePersistedStore((s) => s.settings);
+  const vault = usePersistedStore((s) => s.vaults.find((v) => v.id === s.settings.activeVaultId));
+  const approveDapp = usePersistedStore((s) => s.approveDapp);
+
+  const [selectedIndex, setSelectedIndex] = useState(settings.activeAccountIndex);
+
+  const permissions = request.permissions ?? [];
+  const selectedWallet = wallets[selectedIndex] ?? null;
+
+  function approve() {
+    if (!selectedWallet) return;
+
+    approveDapp({
+      origin: dappOrigin,
+      name: dappName,
+      approvedAt: Date.now(),
+      permissions,
+    });
+
+    onApprove({ identity: selectedWallet.identity, permissions });
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--color-text-primary)" }}>
+        This dApp wants to know your identity.
+      </div>
+
+      {/* Account picker */}
+      <div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "var(--space-2)" }}>
+          Reveal account
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          {wallets.map((w, i) => {
+            const account = vault?.accounts[i];
+            if (!account) return null;
+            const isSelected = i === selectedIndex;
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedIndex(i)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "var(--space-4)",
+                  padding: "var(--space-3)",
+                  background: isSelected ? "var(--color-bg-surface)" : "none",
+                  border: `1px solid ${isSelected ? "var(--color-text-display)" : "var(--color-border-strong)"}`,
+                  borderRadius: "var(--radius-sharp)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  width: "100%",
+                }}
+              >
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500, color: "var(--color-text-primary)" }}>
+                  {account.name}
+                </span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em" }}>
+                  {truncate(w.identity)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Requested permissions */}
+      {permissions.length > 0 && (
+        <div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "var(--space-2)" }}>
+            Permissions requested
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            {permissions.map((p) => (
+              <div key={p} style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-primary)", letterSpacing: "0.05em" }}>
+                · {PERMISSION_LABELS[p] ?? p}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Button onClick={approve} disabled={!selectedWallet}>
+        Connect
+      </Button>
+      <Button variant="danger" shape="sharp" onClick={onReject}>
+        Reject
+      </Button>
+    </div>
+  );
+}

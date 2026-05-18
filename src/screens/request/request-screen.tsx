@@ -9,6 +9,7 @@ import { RequestHeader } from "@/components/request/request-header";
 import { TransferPreview, type ApproveResult } from "@/components/request/transfer-preview";
 import { ScCallPreview } from "@/components/request/sc-call-preview";
 import { SignMessagePreview, type SignMessageApproveResult } from "@/components/request/sign-message-preview";
+import { ConnectPreview, type ConnectApproveResult } from "@/components/request/connect-preview";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
 import { useAutoLock } from "@/hooks/use-auto-lock";
@@ -45,8 +46,8 @@ const TYPE_LABEL: Record<string, string> = {
 type CallbackStatus = "pending" | "ok" | "failed";
 
 interface SuccessState {
-  kind: "tx" | "message";
-  detail: string; // tx hash for tx, base64 signature for message
+  kind: "tx" | "message" | "connect";
+  detail: string; // tx hash, base64 signature, or identity
   dappName: string;
   callbackStatus: CallbackStatus;
   callbackBody: string;
@@ -142,10 +143,33 @@ export default function RequestScreen() {
     await postCallback(callbackBody);
   }
 
+  async function handleApproveConnect({ identity, permissions }: ConnectApproveResult) {
+    if (!envelope) return;
+
+    const callbackBody = JSON.stringify({
+      status: "connected",
+      nonce: envelope.request.nonce,
+      type: envelope.request.type,
+      identity,
+      permissions,
+    });
+
+    setPendingRequest(null);
+    const state: SuccessState = {
+      kind: "connect",
+      detail: identity,
+      dappName: envelope.request.dapp.name,
+      callbackStatus: "pending",
+      callbackBody,
+    };
+    setSuccess(state);
+    await postCallback(callbackBody);
+  }
+
   // ── Success screen ──
   if (success) {
-    const detailLabel = success.kind === "tx" ? "Transaction hash" : "Signature";
-    const tagLabel = success.kind === "tx" ? "SENT" : "SIGNED";
+    const detailLabel = success.kind === "tx" ? "Transaction hash" : success.kind === "message" ? "Signature" : "Identity";
+    const tagLabel = success.kind === "tx" ? "SENT" : success.kind === "message" ? "SIGNED" : "CONNECTED";
 
     return (
       <AppShell
@@ -248,14 +272,15 @@ export default function RequestScreen() {
           onApprove={handleApproveMessage}
           onReject={reject}
         />
-      ) : (
-        <>
-          <div style={{ textAlign: "center", padding: "var(--space-8) 0", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
-            [{request.type.toUpperCase()} REQUEST]
-          </div>
-          <Button variant="danger" shape="sharp" onClick={reject}>Reject</Button>
-        </>
-      )}
+      ) : request.type === "connect" ? (
+        <ConnectPreview
+          dappName={request.dapp.name}
+          dappOrigin={request.dapp.origin}
+          request={request as unknown as Parameters<typeof ConnectPreview>[0]["request"]}
+          onApprove={handleApproveConnect}
+          onReject={reject}
+        />
+      ) : null}
     </AppShell>
   );
 }
