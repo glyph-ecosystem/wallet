@@ -48,6 +48,8 @@ export interface AppSettings {
   hideBalances: boolean;
   approvedDapps: ApprovedDapp[];
   currency: "USD" | "EUR" | "BTC";
+  tickOffset: number;
+  debugMode: boolean;
 }
 
 export interface Contact {
@@ -84,6 +86,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   hideBalances: false,
   approvedDapps: [],
   currency: "USD",
+  tickOffset: 10,
+  debugMode: false,
 };
 
 const _disk = new LazyStore("sigil.json");
