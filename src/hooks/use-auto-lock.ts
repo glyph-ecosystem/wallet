@@ -25,6 +25,7 @@ export function useAutoLock() {
   // Core lock listener + activity reset events
   useEffect(() => {
     const unlistenPromise = listen("sigil:lock", () => {
+      invoke("clear_clipboard").catch(() => {});
       lock();
       navigate("/lock", { replace: true });
     });
