@@ -12,6 +12,7 @@ import { Divider } from "@/components/divider";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
 import { useAutoLock } from "@/hooks/use-auto-lock";
+import { useBalance } from "@/hooks/use-balance";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { isValidIdentity } from "@/lib/crypto";
 import { getRpcClient, estimateTargetTick } from "@/lib/rpc";
@@ -53,6 +54,8 @@ export default function SendManyScreen() {
     staleTime: 60_000,
   });
   const fee = feeData?.ok ? feeData.value.fee : null;
+  const { data: balanceData } = useBalance(wallet?.identity ?? null);
+  const balance = balanceData?.balance ?? null;
 
   const [step, setStep] = useState<Step>("input");
   const [recipients, setRecipients] = useState<Recipient[]>([emptyRecipient()]);
@@ -231,8 +234,26 @@ export default function SendManyScreen() {
             </button>
           )}
 
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em", textAlign: "right" }}>
-            TOTAL: {totalAmount.toLocaleString()} QU
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>TOTAL</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em" }}>
+                {totalAmount.toLocaleString()} QU
+              </span>
+            </div>
+            {balance !== null && (() => {
+              const deducted = BigInt(Math.round(totalAmount)) + (fee ?? 0n);
+              const remaining = balance - deducted;
+              const over = remaining < 0n;
+              return (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>AVAILABLE</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", letterSpacing: "0.05em", color: over ? "var(--color-status-error)" : "var(--color-text-secondary)" }}>
+                    {Number(remaining).toLocaleString()} QU
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           <Button onClick={goReview} disabled={recipients.length === 0}>Review</Button>

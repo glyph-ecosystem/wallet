@@ -9,6 +9,7 @@ import { Modal } from "@/components/modal";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
 import { useAutoLock } from "@/hooks/use-auto-lock";
+import { useBalance } from "@/hooks/use-balance";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { useTxHistory } from "@/hooks/use-tx-history";
 import { isValidIdentity } from "@/lib/crypto";
@@ -36,6 +37,8 @@ export default function SendScreen() {
 
   const wallet = wallets[settings.activeAccountIndex] ?? null;
   const { data: tickInfo } = useTickInfo();
+  const { data: balanceData } = useBalance(wallet?.identity ?? null);
+  const balance = balanceData?.balance ?? null;
 
   const [step, setStep] = useState<Step>("input");
   const [destination, setDestination] = useState(() => searchParams.get("to") ?? "");
@@ -205,6 +208,8 @@ export default function SendScreen() {
             placeholder="0"
             style={{ textAlign: "right", fontSize: "var(--text-display)", fontWeight: 300, fontFamily: "var(--font-sans)" }}
           />
+
+          <BalanceBar balance={balance} amountStr={amountStr} />
 
           <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
             FROM: {accountName} · {truncate(identity)}
@@ -428,6 +433,24 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
       </span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-primary)", letterSpacing: "0.05em", textAlign: "right", wordBreak: "break-all" }}>
         {value}
+      </span>
+    </div>
+  );
+}
+
+function BalanceBar({ balance, amountStr }: { balance: bigint | null; amountStr: string }) {
+  if (balance === null) return null;
+  const n = amountStr.trim();
+  const entered = n && !isNaN(Number(n)) ? BigInt(Math.round(Number(n))) : 0n;
+  const remaining = balance - entered;
+  const over = remaining < 0n;
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
+        AVAILABLE
+      </span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", letterSpacing: "0.05em", color: over ? "var(--color-status-error)" : "var(--color-text-secondary)" }}>
+        {Number(remaining).toLocaleString()} QU
       </span>
     </div>
   );
