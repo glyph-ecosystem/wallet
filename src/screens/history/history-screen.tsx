@@ -10,6 +10,7 @@ import { useSessionStore } from "@/store/session";
 import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useTxHistory } from "@/hooks/use-tx-history";
 import { useTickInfo } from "@/hooks/use-tick-info";
+import { KNOWN_CONTRACT_ADDRESSES } from "@/lib/contracts";
 
 type TxFilter = "all" | "received" | "sent";
 
@@ -152,6 +153,7 @@ export default function HistoryScreen() {
     filteredPending.forEach((p, i) => {
       const isIncoming = p.destination === identity;
       const expired = isExpired(p);
+      const isScCall = !!p.contractName;
       if (i > 0 || rows.length > 0) rows.push(<Divider key={`div-p-${i}`} style={{ margin: "var(--space-3) 0" }} />);
       rows.push(
         <button
@@ -165,7 +167,7 @@ export default function HistoryScreen() {
                 <Tag variant={expired ? "error" : "warning"}>{expired ? "FAILED" : "PENDING"}</Tag>
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em" }}>
-                {isIncoming ? truncate(p.source) : truncate(p.destination)}
+                {isScCall ? p.contractName : (isIncoming ? truncate(p.source) : truncate(p.destination))}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", marginTop: 2 }}>
                 {expired ? `EXPIRED AT TICK ${p.targetTick}` : `TARGET TICK ${p.targetTick}`}
@@ -173,7 +175,7 @@ export default function HistoryScreen() {
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: expired ? "var(--color-text-disabled)" : "var(--color-status-warning)" }}>
-                {hideBalances ? "••••••" : `${isIncoming ? "+" : "−"}${formatAmount(p.amount)}`}
+                {hideBalances ? "••••••" : `−${formatAmount(p.amount)}`}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>QU</div>
             </div>
@@ -185,10 +187,12 @@ export default function HistoryScreen() {
     // Fetched rows
     filteredTxs.forEach((tx, i) => {
       const isIncoming = tx.destination === identity;
+      const contractName = tx.destination ? KNOWN_CONTRACT_ADDRESSES[tx.destination] : undefined;
+      const isScCall = !!contractName;
       const amount = formatAmount(tx.amount);
       const moneyFlew = tx.moneyFlew ?? true;
-      const statusVariant = moneyFlew ? (isIncoming ? "success" : "neutral") : "error";
-      const statusLabel = moneyFlew ? (isIncoming ? "RECEIVED" : "SENT") : "FAILED";
+      const statusVariant = !moneyFlew ? "error" : isScCall ? "neutral" : (isIncoming ? "success" : "neutral");
+      const statusLabel = !moneyFlew ? "FAILED" : isScCall ? "SC CALL" : (isIncoming ? "RECEIVED" : "SENT");
       if (i > 0 || rows.length > 0) rows.push(<Divider key={`div-${i}`} style={{ margin: "var(--space-3) 0" }} />);
       rows.push(
         <button
@@ -202,7 +206,7 @@ export default function HistoryScreen() {
                 <Tag variant={statusVariant}>{statusLabel}</Tag>
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em" }}>
-                {isIncoming ? truncate(tx.source ?? "—") : truncate(tx.destination ?? "—")}
+                {isScCall ? contractName : (isIncoming ? truncate(tx.source ?? "—") : truncate(tx.destination ?? "—"))}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", marginTop: 2 }}>
                 TICK {tx.tickNumber}
@@ -240,17 +244,34 @@ export default function HistoryScreen() {
       <Modal open={!!detail} onClose={() => setDetail(null)}>
         {detail && (
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-              {isPending(detail) ? (
-                <Tag variant={isExpired(detail) ? "error" : "warning"}>
-                  {isExpired(detail) ? "FAILED" : "PENDING"}
-                </Tag>
-              ) : (
-                <Tag variant={(detail.moneyFlew ?? true) ? (detail.destination === identity ? "success" : "neutral") : "error"}>
-                  {(detail.moneyFlew ?? true) ? (detail.destination === identity ? "RECEIVED" : "SENT") : "FAILED"}
-                </Tag>
-              )}
-            </div>
+            {(() => {
+              const contractName = isPending(detail)
+                ? detail.contractName
+                : (detail.destination ? KNOWN_CONTRACT_ADDRESSES[detail.destination] : undefined);
+              const isScCall = !!contractName;
+              return (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                    {isPending(detail) ? (
+                      <Tag variant={isExpired(detail) ? "error" : "warning"}>
+                        {isExpired(detail) ? "FAILED" : "PENDING"}
+                      </Tag>
+                    ) : (
+                      <Tag variant={!(detail.moneyFlew ?? true) ? "error" : isScCall ? "neutral" : (detail.destination === identity ? "success" : "neutral")}>
+                        {!(detail.moneyFlew ?? true) ? "FAILED" : isScCall ? "SC CALL" : (detail.destination === identity ? "RECEIVED" : "SENT")}
+                      </Tag>
+                    )}
+                  </div>
+                  {isScCall && (
+                    <DetailRow label="Contract">
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-primary)", letterSpacing: "0.05em" }}>
+                        {contractName}
+                      </span>
+                    </DetailRow>
+                  )}
+                </>
+              );
+            })()}
 
             <DetailRow label="Amount">
               <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: "var(--color-text-display)" }}>

@@ -24,3 +24,9 @@ export {
 // Pre-computed contract destination identities.
 export const QUTIL_ADDRESS = contractIndexToIdentity(Q_UTIL_CONTRACT_INDEX);
 export const QEARN_ADDRESS = contractIndexToIdentity(QEARN_CONTRACT_INDEX);
+
+// Used in history to detect SC calls by destination address.
+export const KNOWN_CONTRACT_ADDRESSES: Record<string, string> = {
+  [QUTIL_ADDRESS]: "QUtil",
+  [QEARN_ADDRESS]: "Qearn",
+};

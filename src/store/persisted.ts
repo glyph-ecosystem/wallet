@@ -69,6 +69,7 @@ export interface PendingTx {
   amount: string;
   targetTick: number;
   broadcastAt: number;
+  contractName?: string; // present for SC calls, e.g. "QUtil · Send to Many"
 }
 
 const DEFAULT_SETTINGS: AppSettings = {

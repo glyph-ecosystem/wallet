@@ -19,6 +19,7 @@ export default function BurnScreen() {
   useAutoLock();
 
   const settings = usePersistedStore((s) => s.settings);
+  const addPendingTx = usePersistedStore((s) => s.addPendingTx);
   const wallets = useSessionStore((s) => s.wallets);
   const wallet = wallets[settings.activeAccountIndex] ?? null;
   const { data: tickInfo } = useTickInfo();
@@ -58,6 +59,16 @@ export default function BurnScreen() {
 
       const result = await getRpcClient().live.broadcastTransaction(encoded);
       if (!result.ok) throw result.error;
+
+      addPendingTx({
+        hash,
+        source: wallet.identity,
+        destination: QUTIL_ADDRESS,
+        amount: amount.toString(),
+        targetTick,
+        broadcastAt: Date.now(),
+        contractName: "QUtil · Burn",
+      });
 
       setTxHash(hash);
       setStep("done");

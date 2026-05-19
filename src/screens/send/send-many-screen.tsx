@@ -147,10 +147,11 @@ export default function SendManyScreen() {
       addPendingTx({
         hash,
         source: wallet.identity,
-        destination: `${recipients.length} recipients`,
+        destination: QUTIL_ADDRESS,
         amount: total.toString(),
         targetTick,
         broadcastAt: Date.now(),
+        contractName: "QUtil · Send to Many",
       });
 
       setTxHash(hash);
