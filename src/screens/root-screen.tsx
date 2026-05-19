@@ -12,20 +12,28 @@ export default function RootScreen() {
   const isLocked = useSessionStore((s) => s.isLocked);
 
   useEffect(() => {
-    const unsub = usePersistedStore.persist.onFinishHydration(() =>
-      setHydrated(true)
-    );
-    setHydrated(usePersistedStore.persist.hasHydrated());
+    console.log("[root] mount — hasHydrated:", usePersistedStore.persist.hasHydrated());
+    const unsub = usePersistedStore.persist.onFinishHydration(() => {
+      console.log("[root] onFinishHydration fired");
+      setHydrated(true);
+    });
+    const current = usePersistedStore.persist.hasHydrated();
+    console.log("[root] setting hydrated:", current);
+    setHydrated(current);
     return unsub;
   }, []);
 
   useEffect(() => {
+    console.log("[root] nav effect — hydrated:", hydrated, "vaults:", vaults.length, "locked:", isLocked);
     if (!hydrated) return;
     if (vaults.length === 0) {
+      console.log("[root] navigating → /setup");
       navigate("/setup", { replace: true });
     } else if (isLocked) {
+      console.log("[root] navigating → /lock");
       navigate("/lock", { replace: true });
     } else {
+      console.log("[root] navigating → /dashboard");
       navigate("/dashboard", { replace: true });
     }
   }, [hydrated, vaults.length, isLocked, navigate]);
