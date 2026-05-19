@@ -123,8 +123,9 @@ fn validate(uri_str: &str) -> Result<ParsedRequest, String> {
     // Validate callback URL if present
     if let Some(cb) = &cb_param {
         let cb_url = Url::parse(cb).map_err(|_| "invalid callback URL".to_string())?;
-        if cb_url.scheme() != "https" {
-            return Err("callback URL must use HTTPS".into());
+        let is_local = matches!(cb_url.host_str(), Some("localhost") | Some("127.0.0.1"));
+        if cb_url.scheme() != "https" && !(cb_url.scheme() == "http" && is_local) {
+            return Err("callback URL must use HTTPS (or http://localhost / http://127.0.0.1 for local dev)".into());
         }
     }
 
