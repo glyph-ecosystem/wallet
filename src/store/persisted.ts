@@ -117,7 +117,7 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | null> =>
 const tauriStorage: StateStorage = {
   getItem: async (name) => {
     try {
-      return (await withTimeout(_disk.get<string>(name), 400)) ?? null;
+      return (await withTimeout(_disk.get<string>(name), 1500)) ?? null;
     } catch {
       return null;
     }
