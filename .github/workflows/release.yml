@@ -119,6 +119,13 @@ jobs:
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
 
+      - name: Strip pre-release suffix from version (MSI requires numeric-only identifiers)
+        shell: pwsh
+        run: |
+          $raw = Get-Content src-tauri/tauri.conf.json -Raw
+          $raw = $raw -replace '("version":\s*"[0-9]+\.[0-9]+\.[0-9]+)-[^"]*"', '$1"'
+          Set-Content src-tauri/tauri.conf.json $raw
+
       - name: Build Tauri app
         run: bun tauri build
 
