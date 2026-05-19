@@ -6,7 +6,7 @@ Self-custodial Qubic wallet with native dApp deep linking. Desktop-first — Win
 
 ## What it is
 
-Sigil solves the missing piece in the Qubic ecosystem: a wallet that lets dApps request signatures without the user ever exposing their seed. Any web app or CLI tool can open a `sigil://` URI, Sigil pops up, the user reviews and approves, and the result posts back to a callback URL. No browser extension. No copy-pasting seeds into web forms.
+Sigil is a desktop wallet for Qubic that keeps your keys on your machine and lets dApps request signatures through a native deep link protocol. Any web app or CLI tool can open a `sigil://` URI — Sigil focuses, shows a review screen, and POSTs the signed result back to a callback URL.
 
 Beyond deep linking, it's a full-featured Qubic wallet:
 
