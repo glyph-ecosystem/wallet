@@ -9,6 +9,7 @@ import { usePersistedStore, type PendingTx } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
 import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useTxHistory } from "@/hooks/use-tx-history";
+import { useTickInfo } from "@/hooks/use-tick-info";
 
 type TxFilter = "all" | "received" | "sent";
 
@@ -44,18 +45,27 @@ export default function HistoryScreen() {
   const identity = wallets[settings.activeAccountIndex]?.identity ?? null;
 
   const { data: txs, isLoading, isError, refetch } = useTxHistory(identity);
+  const { data: tickInfo } = useTickInfo();
+  const currentTick = tickInfo?.tick ?? 0;
 
   const [filter, setFilter] = useState<TxFilter>("all");
   const [detail, setDetail] = useState<FetchedTx | PendingTx | null>(null);
 
-  // Remove pending txs that have now appeared in fetched history
+  const isExpired = (p: PendingTx) => currentTick > 0 && currentTick > p.targetTick;
+
+  // Remove pending txs that appeared in history or whose target tick has passed
   useEffect(() => {
-    if (!txs) return;
+    if (!txs || !currentTick) return;
     const fetchedHashes = new Set(txs.map((t) => t.hash).filter(Boolean));
     pendingTxs.forEach((p) => {
-      if (fetchedHashes.has(p.hash)) removePendingTx(p.hash);
+      if (fetchedHashes.has(p.hash)) {
+        removePendingTx(p.hash);
+      } else if (currentTick > p.targetTick + 30) {
+        // Definitively expired and not in history — failed
+        removePendingTx(p.hash);
+      }
     });
-  }, [txs, pendingTxs, removePendingTx]);
+  }, [txs, pendingTxs, removePendingTx, currentTick]);
 
   // Pending txs belonging to this identity
   const myPending = pendingTxs.filter(
@@ -138,9 +148,10 @@ export default function HistoryScreen() {
 
     const rows: ReactElement[] = [];
 
-    // Pending rows
+    // Pending rows (includes expired ones shown as FAILED until cleaned up)
     filteredPending.forEach((p, i) => {
       const isIncoming = p.destination === identity;
+      const expired = isExpired(p);
       if (i > 0 || rows.length > 0) rows.push(<Divider key={`div-p-${i}`} style={{ margin: "var(--space-3) 0" }} />);
       rows.push(
         <button
@@ -151,17 +162,17 @@ export default function HistoryScreen() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-1)" }}>
-                <Tag variant="warning">PENDING</Tag>
+                <Tag variant={expired ? "error" : "warning"}>{expired ? "FAILED" : "PENDING"}</Tag>
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em" }}>
                 {isIncoming ? truncate(p.source) : truncate(p.destination)}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", marginTop: 2 }}>
-                TARGET TICK {p.targetTick}
+                {expired ? `EXPIRED AT TICK ${p.targetTick}` : `TARGET TICK ${p.targetTick}`}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: "var(--color-status-warning)" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: expired ? "var(--color-text-disabled)" : "var(--color-status-warning)" }}>
                 {hideBalances ? "••••••" : `${isIncoming ? "+" : "−"}${formatAmount(p.amount)}`}
               </div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>QU</div>
@@ -231,7 +242,9 @@ export default function HistoryScreen() {
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
               {isPending(detail) ? (
-                <Tag variant="warning">PENDING</Tag>
+                <Tag variant={isExpired(detail) ? "error" : "warning"}>
+                  {isExpired(detail) ? "FAILED" : "PENDING"}
+                </Tag>
               ) : (
                 <Tag variant={(detail.moneyFlew ?? true) ? (detail.destination === identity ? "success" : "neutral") : "error"}>
                   {(detail.moneyFlew ?? true) ? (detail.destination === identity ? "RECEIVED" : "SENT") : "FAILED"}

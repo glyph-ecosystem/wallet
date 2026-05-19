@@ -208,7 +208,7 @@ export default function DashboardScreen() {
         )}
 
         {/* Recent transactions */}
-        <RecentTxs identity={identity} activeIdentity={identity} hideBalances={settings.hideBalances} onViewAll={() => navigate("/history")} />
+        <RecentTxs identity={identity} activeIdentity={identity} hideBalances={settings.hideBalances} currentTick={tickInfo?.tick ?? 0} onViewAll={() => navigate("/history")} />
 
       </div>
 
@@ -249,12 +249,27 @@ interface RecentTxsProps {
   identity: string | null;
   activeIdentity: string | null;
   hideBalances: boolean;
+  currentTick: number;
   onViewAll: () => void;
 }
 
-function RecentTxs({ identity, activeIdentity, hideBalances, onViewAll }: RecentTxsProps) {
+function RecentTxs({ identity, activeIdentity, hideBalances, currentTick, onViewAll }: RecentTxsProps) {
   const { data: txs, isLoading } = useTxHistory(identity);
   const pendingTxs = usePersistedStore((s) => s.pendingTxs);
+  const removePendingTx = usePersistedStore((s) => s.removePendingTx);
+
+  const isExpired = (p: { targetTick: number }) =>
+    currentTick > 0 && currentTick > p.targetTick;
+
+  // Cleanup: remove confirmed or definitively expired pending txs
+  useEffect(() => {
+    if (!txs || !currentTick) return;
+    const fetchedHashes = new Set(txs.map((t) => t.hash).filter(Boolean));
+    pendingTxs.forEach((p) => {
+      if (fetchedHashes.has(p.hash)) removePendingTx(p.hash);
+      else if (currentTick > p.targetTick + 30) removePendingTx(p.hash);
+    });
+  }, [txs, pendingTxs, removePendingTx, currentTick]);
 
   const myPending = pendingTxs
     .filter((p) => p.source === activeIdentity || p.destination === activeIdentity)
@@ -287,17 +302,18 @@ function RecentTxs({ identity, activeIdentity, hideBalances, onViewAll }: Recent
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
       {myPending.map((p, i) => {
         const isIn = p.destination === activeIdentity;
+        const expired = isExpired(p);
         return (
           <div key={p.hash}>
             {i > 0 && <Divider style={{ marginBottom: "var(--space-3)" }} />}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-                <Tag variant="warning">PENDING</Tag>
+                <Tag variant={expired ? "error" : "warning"}>{expired ? "FAILED" : "PENDING"}</Tag>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
                   {truncate(isIn ? p.source : p.destination)}
                 </span>
               </div>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: "var(--color-status-warning)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)", color: expired ? "var(--color-text-disabled)" : "var(--color-status-warning)" }}>
                 {hideBalances ? "••••••" : `${isIn ? "+" : "−"}${formatAmount(p.amount)}`}
               </span>
             </div>
