@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "sigil": "0.1.0"
+  },
+  "changesets": []
+}

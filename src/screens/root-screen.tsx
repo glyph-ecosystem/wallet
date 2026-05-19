@@ -1,16 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
 
 export default function RootScreen() {
   const navigate = useNavigate();
-  const hasHydrated = usePersistedStore.persist.hasHydrated();
+  const [hydrated, setHydrated] = useState(() =>
+    usePersistedStore.persist.hasHydrated()
+  );
   const vaults = usePersistedStore((s) => s.vaults);
   const isLocked = useSessionStore((s) => s.isLocked);
 
   useEffect(() => {
-    if (!hasHydrated) return;
+    const unsub = usePersistedStore.persist.onFinishHydration(() =>
+      setHydrated(true)
+    );
+    setHydrated(usePersistedStore.persist.hasHydrated());
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (vaults.length === 0) {
       navigate("/setup", { replace: true });
     } else if (isLocked) {
@@ -18,7 +28,7 @@ export default function RootScreen() {
     } else {
       navigate("/dashboard", { replace: true });
     }
-  }, [hasHydrated, vaults.length, isLocked, navigate]);
+  }, [hydrated, vaults.length, isLocked, navigate]);
 
   return (
     <div
