@@ -47,6 +47,8 @@ const DappsScreen = lazy(() => import("@/screens/settings/dapps-screen"));
 const SecurityScreen = lazy(() => import("@/screens/settings/security-screen"));
 const NetworkScreen = lazy(() => import("@/screens/settings/network-screen"));
 const AppearanceScreen = lazy(() => import("@/screens/settings/appearance-screen"));
+const SettingsContactsScreen = lazy(() => import("@/screens/settings/contacts-screen"));
+const NotificationsScreen = lazy(() => import("@/screens/settings/notifications-screen"));
 
 export const router = createHashRouter([
   { path: "/", element: <Screen component={RootScreen} /> },
@@ -70,4 +72,6 @@ export const router = createHashRouter([
   { path: "/settings/security", element: <Screen component={SecurityScreen} /> },
   { path: "/settings/network", element: <Screen component={NetworkScreen} /> },
   { path: "/settings/appearance", element: <Screen component={AppearanceScreen} /> },
+  { path: "/settings/contacts", element: <Screen component={SettingsContactsScreen} /> },
+  { path: "/settings/notifications", element: <Screen component={NotificationsScreen} /> },
 ]);

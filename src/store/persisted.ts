@@ -5,6 +5,8 @@ import type { StateStorage } from "zustand/middleware";
 import type { VaultData } from "@qubic.org/wallet";
 
 export type VaultColor = "slate" | "red" | "amber" | "emerald" | "sky" | "violet";
+export type FontPairId = "default" | "inter" | "ibm" | "roboto" | "fira";
+export type AccentColorId = "green" | "amber" | "sky" | "violet" | "rose" | "mono";
 
 export interface AccountMeta {
   index: number;
@@ -51,6 +53,13 @@ export interface AppSettings {
   tickOffset: number;
   debugMode: boolean;
   biometricVaultIds: string[];
+  fontPair: FontPairId;
+  accentColor: AccentColorId;
+  customScheme: { bg: string; text: string } | null;
+  notificationsEnabled: boolean;
+  notifyOnReceived: boolean;
+  notifyOnSent: boolean;
+  notifyOnConfirmed: boolean;
 }
 
 export interface Contact {
@@ -91,6 +100,13 @@ const DEFAULT_SETTINGS: AppSettings = {
   tickOffset: 10,
   debugMode: false,
   biometricVaultIds: [],
+  fontPair: "default",
+  accentColor: "green",
+  customScheme: null,
+  notificationsEnabled: false,
+  notifyOnReceived: true,
+  notifyOnSent: true,
+  notifyOnConfirmed: true,
 };
 
 const _disk = new LazyStore("sigil.json");

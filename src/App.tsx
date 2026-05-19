@@ -4,6 +4,9 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "@/router";
 import { useDeepLink } from "@/hooks/use-deep-link";
 import { usePersistedStore } from "@/store/persisted";
+import { FONT_PAIRS, ACCENT_COLORS, CUSTOM_SCHEME_VARS, deriveCustomScheme } from "@/lib/appearance";
+import { useNotificationTriggers } from "@/hooks/use-notification-triggers";
+import { configureRpc } from "@/lib/rpc";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,8 +17,11 @@ const queryClient = new QueryClient({
   },
 });
 
-function ThemeApplier() {
+function AppearanceApplier() {
   const theme = usePersistedStore((s) => s.settings.theme);
+  const fontPair = usePersistedStore((s) => s.settings.fontPair);
+  const accentColor = usePersistedStore((s) => s.settings.accentColor);
+  const customScheme = usePersistedStore((s) => s.settings.customScheme);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -30,18 +36,71 @@ function ThemeApplier() {
     root.setAttribute("data-theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    const pair = FONT_PAIRS.find((p) => p.id === fontPair) ?? FONT_PAIRS[0];
+    const root = document.documentElement;
+    root.style.setProperty("--font-sans", pair.sans);
+    root.style.setProperty("--font-mono", pair.mono);
+
+    const LINK_ID = "sigil-google-font";
+    const existing = document.getElementById(LINK_ID) as HTMLLinkElement | null;
+    if (pair.googleUrl) {
+      if (!existing) {
+        const link = document.createElement("link");
+        link.id = LINK_ID;
+        link.rel = "stylesheet";
+        link.href = pair.googleUrl;
+        document.head.appendChild(link);
+      } else {
+        existing.href = pair.googleUrl;
+      }
+    } else {
+      existing?.remove();
+    }
+  }, [fontPair]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const accent = ACCENT_COLORS.find((a) => a.id === accentColor) ?? ACCENT_COLORS[0];
+
+    if (customScheme) {
+      const vars = deriveCustomScheme(customScheme.bg, customScheme.text, accent.hex);
+      for (const [key, val] of Object.entries(vars)) {
+        root.style.setProperty(key, val);
+      }
+    } else {
+      for (const v of CUSTOM_SCHEME_VARS) {
+        root.style.removeProperty(v);
+      }
+      root.style.setProperty("--color-status-success", accent.hex);
+    }
+  }, [accentColor, customScheme]);
+
+  return null;
+}
+
+function RpcSyncer() {
+  const liveApiUrl = usePersistedStore((s) => s.settings.network.liveApiUrl);
+  const queryApiUrl = usePersistedStore((s) => s.settings.network.queryApiUrl);
+
+  useEffect(() => {
+    configureRpc(liveApiUrl, queryApiUrl);
+  }, [liveApiUrl, queryApiUrl]);
+
   return null;
 }
 
 function GlobalListeners() {
   useDeepLink();
+  useNotificationTriggers();
   return null;
 }
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeApplier />
+      <AppearanceApplier />
+      <RpcSyncer />
       <GlobalListeners />
       <RouterProvider router={router} />
     </QueryClientProvider>
