@@ -7,6 +7,9 @@ import {
   QEARN_CONTRACT_INDEX,
   QEARN_LOCK_INPUT_TYPE,
   buildQearnUnlockInput,
+  qearnGetUserLockStatus,
+  qearnGetUserLockedInfo,
+  qearnGetLockInfoPerEpoch,
 } from "@qubic.org/contracts";
 
 export type { ContractCall } from "@qubic.org/contracts";
@@ -19,6 +22,9 @@ export {
   QEARN_CONTRACT_INDEX,
   QEARN_LOCK_INPUT_TYPE,
   buildQearnUnlockInput,
+  qearnGetUserLockStatus,
+  qearnGetUserLockedInfo,
+  qearnGetLockInfoPerEpoch,
 };
 
 // Pre-computed contract destination identities.

@@ -210,6 +210,16 @@ export default function DashboardScreen() {
         {/* Recent transactions */}
         <RecentTxs identity={identity} activeIdentity={identity} hideBalances={settings.hideBalances} currentTick={tickInfo?.tick ?? 0} onViewAll={() => navigate("/history")} />
 
+        {/* Utility shortcuts */}
+        <div style={{ display: "flex", justifyContent: "center", gap: "var(--space-6)" }}>
+          <button onClick={() => navigate("/stake")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", padding: 0 }}>
+            QEARN →
+          </button>
+          <button onClick={() => navigate("/send-many")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", padding: 0 }}>
+            SEND MANY →
+          </button>
+        </div>
+
       </div>
 
       {/* Network health overlay */}

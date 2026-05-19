@@ -37,6 +37,7 @@ const VaultDetailScreen = lazy(() => import("@/screens/vaults/vault-detail-scree
 const SendScreen = lazy(() => import("@/screens/send/send-screen"));
 const SendManyScreen = lazy(() => import("@/screens/send/send-many-screen"));
 const BurnScreen = lazy(() => import("@/screens/send/burn-screen"));
+const StakeScreen = lazy(() => import("@/screens/stake/stake-screen"));
 const ReceiveScreen = lazy(() => import("@/screens/receive/receive-screen"));
 const HistoryScreen = lazy(() => import("@/screens/history/history-screen"));
 const ContactsScreen = lazy(() => import("@/screens/contacts/contacts-screen"));
@@ -59,6 +60,7 @@ export const router = createHashRouter([
   { path: "/send", element: <Screen component={SendScreen} /> },
   { path: "/send-many", element: <Screen component={SendManyScreen} /> },
   { path: "/burn", element: <Screen component={BurnScreen} /> },
+  { path: "/stake", element: <Screen component={StakeScreen} /> },
   { path: "/receive", element: <Screen component={ReceiveScreen} /> },
   { path: "/history", element: <Screen component={HistoryScreen} /> },
   { path: "/contacts", element: <Screen component={ContactsScreen} /> },
