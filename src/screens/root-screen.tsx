@@ -72,7 +72,7 @@ export default function RootScreen() {
     const unsub = usePersistedStore.persist.onFinishHydration(() => setHydrated(true));
     setHydrated(usePersistedStore.persist.hasHydrated());
     // Safety net: if IPC hangs past the store timeout, unblock navigation anyway
-    const timer = setTimeout(() => setHydrated(true), 2000);
+    const timer = setTimeout(() => setHydrated(true), 3000);
     return () => {
       unsub();
       clearTimeout(timer);
