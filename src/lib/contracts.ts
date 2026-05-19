@@ -1,16 +1,24 @@
 import { contractIndexToIdentity } from "@qubic.org/crypto";
+import {
+  Q_UTIL_CONTRACT_INDEX,
+  Q_UTIL_SEND_TO_MANY_V1_INPUT_TYPE,
+  buildQUtilBurnQubicInput,
+  QEARN_CONTRACT_INDEX,
+  QEARN_LOCK_INPUT_TYPE,
+  buildQearnUnlockInput,
+} from "@qubic.org/contracts";
 
-// Verify indices against the Qubic protocol source before shipping.
-export const QUTIL = {
-  index: 4,
-  address: contractIndexToIdentity(4),
-  SendToManyV1: 1,
-  BurnQu: 2,
-} as const;
+export type { ContractCall } from "@qubic.org/contracts";
 
-export const QEARN = {
-  index: 6,
-  address: contractIndexToIdentity(6),
-  LockInQearn: 1,
-  UnlockInQearn: 2,
-} as const;
+export {
+  Q_UTIL_CONTRACT_INDEX,
+  Q_UTIL_SEND_TO_MANY_V1_INPUT_TYPE,
+  buildQUtilBurnQubicInput,
+  QEARN_CONTRACT_INDEX,
+  QEARN_LOCK_INPUT_TYPE,
+  buildQearnUnlockInput,
+};
+
+// Pre-computed contract destination identities.
+export const QUTIL_ADDRESS = contractIndexToIdentity(Q_UTIL_CONTRACT_INDEX);
+export const QEARN_ADDRESS = contractIndexToIdentity(QEARN_CONTRACT_INDEX);

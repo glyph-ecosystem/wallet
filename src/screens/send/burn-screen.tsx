@@ -10,7 +10,7 @@ import { useSessionStore } from "@/store/session";
 import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { getRpcClient, estimateTargetTick } from "@/lib/rpc";
-import { QUTIL } from "@/lib/contracts";
+import { buildQUtilBurnQubicInput, QUTIL_ADDRESS } from "@/lib/contracts";
 
 type Step = "input" | "confirm" | "sending" | "done" | "error";
 
@@ -46,11 +46,11 @@ export default function BurnScreen() {
       const amount = BigInt(Math.round(Number(amountStr.trim())));
       const targetTick = estimateTargetTick(tickInfo.tick ?? 0, settings.tickOffset);
 
-      // BurnQu: amount is passed as the transaction value; no payload needed
+      const { inputType, payload } = buildQUtilBurnQubicInput({ amount });
       const { encoded, hash } = await wallet.buildScTransaction({
-        destination: QUTIL.address,
-        inputType: QUTIL.BurnQu,
-        payload: new Uint8Array(0),
+        destination: QUTIL_ADDRESS,
+        inputType,
+        payload,
         amount,
         targetTick,
         currentTick: tickInfo.tick,

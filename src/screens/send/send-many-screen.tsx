@@ -14,7 +14,7 @@ import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { isValidIdentity } from "@/lib/crypto";
 import { getRpcClient, estimateTargetTick } from "@/lib/rpc";
-import { QUTIL } from "@/lib/contracts";
+import { QUTIL_ADDRESS, Q_UTIL_SEND_TO_MANY_V1_INPUT_TYPE } from "@/lib/contracts";
 
 const MAX_RECIPIENTS = 25;
 
@@ -116,8 +116,8 @@ export default function SendManyScreen() {
       const total = BigInt(Math.round(totalAmount));
 
       const { encoded, hash } = await wallet.buildScTransaction({
-        destination: QUTIL.address,
-        inputType: QUTIL.SendToManyV1,
+        destination: QUTIL_ADDRESS,
+        inputType: Q_UTIL_SEND_TO_MANY_V1_INPUT_TYPE,
         payload,
         amount: total,
         targetTick,
