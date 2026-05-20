@@ -24,6 +24,8 @@
     "deep-link:default",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
-    "notification:default"
+    "notification:default",
+    "updater:allow-check",
+    "updater:allow-download-and-install"
   ]
 }
