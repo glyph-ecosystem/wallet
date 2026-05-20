@@ -11,7 +11,19 @@ Manual test guide for every user-facing flow. Run through all sections on each p
 Use any valid 55-char Qubic seed. Generate one with: bun run dev → "Create wallet"
 ```
 
-**Test dApp page** — create `test.html` locally:
+**Requirements for deep link testing:**
+- Sigil must be **installed** (not just running via `bun run dev`) — the `sigil://` scheme is only registered in the OS by the installer
+- On Windows: verify the scheme is registered at `HKCU\Software\Classes\sigil`
+- On macOS/Linux: same applies — use a release build
+
+**Test dApp page** — create `test.html` locally and open it via a local server (not `file://` — browsers block custom-scheme navigation from file origins):
+
+```bash
+# Serve test.html on localhost:8080
+npx serve . -p 8080
+# or: python3 -m http.server 8080
+```
+
 ```html
 <!DOCTYPE html>
 <html>
@@ -28,7 +40,12 @@ function request(type, params) {
     exp: Math.floor(Date.now() / 1000) + 300,
     ...params
   }));
-  window.location.href = `sigil://v1/request?d=${payload}&cb=http://localhost:9999/cb`;
+  const url = `sigil://v1/request?d=${payload}&cb=http://localhost:9999/cb`;
+  const a = document.createElement('a');
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 </script>
 <button onclick="request('transfer', { to: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', amount: 1 })">Transfer</button>
@@ -37,7 +54,7 @@ function request(type, params) {
 </html>
 ```
 
-Open `test.html` via `file://` in a browser. For callback testing, run `nc -l 9999` (or similar) to receive the POST.
+For callback testing, run `nc -l 9999` (or similar) to receive the POST.
 
 ---
 
