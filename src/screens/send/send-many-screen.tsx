@@ -11,7 +11,6 @@ import { Tag } from "@/components/tag";
 import { Divider } from "@/components/divider";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useBalance } from "@/hooks/use-balance";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { isValidIdentity } from "@/lib/crypto";
@@ -38,7 +37,6 @@ function emptyRecipient(): Recipient {
 
 export default function SendManyScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const contacts = usePersistedStore((s) => s.contacts);
   const updateContact = usePersistedStore((s) => s.updateContact);

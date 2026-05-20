@@ -5,7 +5,6 @@ import { AppShell } from "@/layouts/app-shell";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import { usePersistedStore } from "@/store/persisted";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { createQubicClient, configureRpc } from "@/lib/rpc";
 
 function isHttpUrl(s: string): boolean {
@@ -19,7 +18,6 @@ const TICK_PRESETS = [5, 10, 15, 20, 30, 50] as const;
 
 export default function NetworkScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const settings = usePersistedStore((s) => s.settings);
   const updateSettings = usePersistedStore((s) => s.updateSettings);

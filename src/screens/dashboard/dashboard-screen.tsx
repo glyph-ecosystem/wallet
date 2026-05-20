@@ -13,7 +13,6 @@ import { useBalance } from "@/hooks/use-balance";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { useLastProcessedTick } from "@/hooks/use-last-processed-tick";
 import { useNetworkHealth } from "@/hooks/use-network-health";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useTxHistory } from "@/hooks/use-tx-history";
 import { Divider } from "@/components/divider";
 import { truncateId, formatQu } from "@/lib/format";
@@ -70,7 +69,6 @@ function padTick(tick: number | undefined): string {
 
 export default function DashboardScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const vaults = usePersistedStore((s) => s.vaults);
   const settings = usePersistedStore((s) => s.settings);

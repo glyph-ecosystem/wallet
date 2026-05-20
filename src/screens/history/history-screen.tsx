@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/layouts/app-shell";
 import { Tag } from "@/components/tag";
@@ -7,7 +7,6 @@ import { Modal } from "@/components/modal";
 import { IdentityDisplay } from "@/components/identity-display";
 import { usePersistedStore, type PendingTx } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useTxHistory } from "@/hooks/use-tx-history";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { KNOWN_CONTRACT_ADDRESSES } from "@/lib/contracts";
@@ -26,12 +25,10 @@ interface FetchedTx {
 
 export default function HistoryScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const settings = usePersistedStore((s) => s.settings);
   const hideBalances = settings.hideBalances;
   const pendingTxs = usePersistedStore((s) => s.pendingTxs);
-  const removePendingTx = usePersistedStore((s) => s.removePendingTx);
   const wallets = useSessionStore((s) => s.wallets);
   const identity = wallets[settings.activeAccountIndex]?.identity ?? null;
 
@@ -43,20 +40,6 @@ export default function HistoryScreen() {
   const [detail, setDetail] = useState<FetchedTx | PendingTx | null>(null);
 
   const isExpired = (p: PendingTx) => currentTick > 0 && currentTick > p.targetTick;
-
-  // Remove pending txs that appeared in history or whose target tick has passed
-  useEffect(() => {
-    if (!txs || !currentTick) return;
-    const fetchedHashes = new Set(txs.map((t) => t.hash).filter(Boolean));
-    pendingTxs.forEach((p) => {
-      if (fetchedHashes.has(p.hash)) {
-        removePendingTx(p.hash);
-      } else if (currentTick > p.targetTick + 30) {
-        // Definitively expired and not in history — failed
-        removePendingTx(p.hash);
-      }
-    });
-  }, [txs, pendingTxs, removePendingTx, currentTick]);
 
   // Pending txs belonging to this identity
   const myPending = pendingTxs.filter(

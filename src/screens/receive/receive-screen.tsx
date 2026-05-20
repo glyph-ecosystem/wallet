@@ -5,11 +5,9 @@ import { AppShell } from "@/layouts/app-shell";
 import { IdentityDisplay } from "@/components/identity-display";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 
 export default function ReceiveScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const settings = usePersistedStore((s) => s.settings);
   const vault = usePersistedStore((s) => s.vaults.find((v) => v.id === s.settings.activeVaultId));

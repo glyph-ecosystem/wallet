@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
+import { useAutoLock } from "@/hooks/use-auto-lock";
 
 type PageVariant = { opacity: number; x?: number; y?: number };
 
@@ -35,6 +36,8 @@ function getDepth(pathname: string): number {
 }
 
 export function AnimatedLayout() {
+  useAutoLock();
+
   const location = useLocation();
   const element = useOutlet();
 

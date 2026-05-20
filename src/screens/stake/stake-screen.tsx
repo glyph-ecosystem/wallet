@@ -9,7 +9,6 @@ import { Tag } from "@/components/tag";
 import { Divider } from "@/components/divider";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useBalance } from "@/hooks/use-balance";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { identityToPublicKey } from "@/lib/crypto";
@@ -43,7 +42,6 @@ function fmt(n: bigint | number): string {
 
 export default function StakeScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const settings = usePersistedStore((s) => s.settings);
   const addPendingTx = usePersistedStore((s) => s.addPendingTx);

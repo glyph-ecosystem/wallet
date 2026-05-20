@@ -8,7 +8,6 @@ import { Tag } from "@/components/tag";
 import { Divider } from "@/components/divider";
 import { usePersistedStore, type VaultMeta, type VaultColor, type AccountMeta } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { unlockVault, createWallet, type VaultData } from "@/lib/vault";
 
 const VAULT_COLOR_CSS: Record<string, string> = {
@@ -31,7 +30,6 @@ function timeAgo(ms: number): string {
 
 export default function VaultsScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const vaults = usePersistedStore((s) => s.vaults);
   const settings = usePersistedStore((s) => s.settings);
