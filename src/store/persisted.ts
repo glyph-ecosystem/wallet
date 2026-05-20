@@ -266,14 +266,18 @@ export const usePersistedStore = create<PersistedState>()(
     {
       name: "sigil-persisted",
       storage: createJSONStorage(() => tauriStorage),
-      // Deep-merge settings so new fields added to DEFAULT_SETTINGS survive rehydration
+      // Deep-merge settings so new fields added to DEFAULT_SETTINGS survive rehydration.
+      // Validate array fields so corrupted JSON cannot replace typed arrays with scalars.
       merge: (persistedState: unknown, currentState: PersistedState): PersistedState => {
         const ps = persistedState as Partial<PersistedState>;
-        return {
-          ...currentState,
-          ...ps,
-          settings: { ...currentState.settings, ...(ps.settings ?? {}) },
-        };
+        const vaults = Array.isArray(ps.vaults) ? ps.vaults : currentState.vaults;
+        const contacts = Array.isArray(ps.contacts) ? ps.contacts : currentState.contacts;
+        const pendingTxs = Array.isArray(ps.pendingTxs) ? ps.pendingTxs : currentState.pendingTxs;
+        const settings =
+          ps.settings && typeof ps.settings === "object" && !Array.isArray(ps.settings)
+            ? { ...currentState.settings, ...ps.settings }
+            : currentState.settings;
+        return { ...currentState, vaults, contacts, pendingTxs, settings };
       },
     },
   ),

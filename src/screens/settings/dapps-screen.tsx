@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/layouts/app-shell";
 import { usePersistedStore } from "@/store/persisted";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import type { ApprovedDapp } from "@/store/persisted";
 
 const PERMISSION_LABELS: Record<string, string> = {
@@ -17,7 +16,6 @@ function formatDate(ms: number): string {
 
 export default function DappsScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const approvedDapps = usePersistedStore((s) => s.settings.approvedDapps);
   const revokeDapp = usePersistedStore((s) => s.revokeDapp);

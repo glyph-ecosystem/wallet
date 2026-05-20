@@ -5,7 +5,6 @@ import { QRCodeSVG } from "qrcode.react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { AppShell } from "@/layouts/app-shell";
 import { Button } from "@/components/button";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { DONATION_IDENTITY, type Sponsor } from "@/data/sponsors";
 import { useSponsors, useInvalidateSponsors } from "@/hooks/use-sponsors";
 import { usePersistedStore } from "@/store/persisted";
@@ -313,7 +312,6 @@ function DiscordSheet({ onClose }: { onClose: () => void }) {
 
 export default function SupportScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const { data: sponsors = [] } = useSponsors();
   const invalidateSponsors = useInvalidateSponsors();

@@ -8,7 +8,6 @@ import { Divider } from "@/components/divider";
 import { Modal } from "@/components/modal";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useBalance } from "@/hooks/use-balance";
 import { useTickInfo } from "@/hooks/use-tick-info";
 import { useTxHistory } from "@/hooks/use-tx-history";
@@ -21,7 +20,6 @@ type Step = "input" | "review" | "sending" | "done" | "error";
 export default function SendScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  useAutoLock();
 
   const settings = usePersistedStore((s) => s.settings);
   const vault = usePersistedStore((s) => s.vaults.find((v) => v.id === s.settings.activeVaultId));

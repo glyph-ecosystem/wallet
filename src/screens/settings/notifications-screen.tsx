@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/layouts/app-shell";
 import { usePersistedStore } from "@/store/persisted";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { notify, requestNotificationPermission } from "@/lib/notifications";
 
 function Toggle({
@@ -104,7 +103,6 @@ function SettingRow({
 
 export default function NotificationsScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const enabled = usePersistedStore((s) => s.settings.notificationsEnabled);
   const onReceived = usePersistedStore((s) => s.settings.notifyOnReceived);
