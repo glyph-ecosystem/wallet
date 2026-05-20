@@ -121,6 +121,7 @@ export default function ImportVaultScreen() {
 
             <Input
               label="Seed phrase"
+              type="password"
               value={seedInput}
               onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(""); }}
               onKeyDown={(e) => e.key === "Enter" && validateAndContinue()}
