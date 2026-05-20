@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { AppShell } from "@/layouts/app-shell";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useUpdater } from "@/hooks/use-updater";
 
 interface SettingsRow {
@@ -23,7 +22,6 @@ const ROWS: SettingsRow[] = [
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
-  useAutoLock();
   const { appVersion, update, checking, upToDate, checkError, installing, progress, install } = useUpdater();
 
   const statusBar = (

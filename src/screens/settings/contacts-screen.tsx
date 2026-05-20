@@ -6,7 +6,6 @@ import { Input } from "@/components/input";
 import { Modal } from "@/components/modal";
 import { Divider } from "@/components/divider";
 import { usePersistedStore, type Contact } from "@/store/persisted";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { isValidIdentity } from "@/lib/crypto";
 import { truncateId } from "@/lib/format";
 
@@ -18,7 +17,6 @@ interface ImportPreview {
 
 export default function SettingsContactsScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const contacts = usePersistedStore((s) => s.contacts);
   const addContact = usePersistedStore((s) => s.addContact);

@@ -13,7 +13,6 @@ import { ConnectPreview, type ConnectApproveResult } from "@/components/request/
 import { VerifyMessagePreview, type VerifyMessageResult } from "@/components/request/verify-message-preview";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 
 interface SigilEnvelope {
   request: {
@@ -58,7 +57,6 @@ interface SuccessState {
 
 export default function RequestScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const approvedDapps = usePersistedStore((s) => s.settings.approvedDapps);
   const pendingRequest = useSessionStore((s) => s.pendingRequest);

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/layouts/app-shell";
 import { usePersistedStore, type AppSettings, type FontPairId, type AccentColorId } from "@/store/persisted";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { FONT_PAIRS, ACCENT_COLORS, deriveCustomScheme } from "@/lib/appearance";
 
 type Theme = AppSettings["theme"];
@@ -175,7 +174,6 @@ function ColorPreview({ bg, text, accent }: { bg: string; text: string; accent: 
 
 export default function AppearanceScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const theme = usePersistedStore((s) => s.settings.theme);
   const fontPair = usePersistedStore((s) => s.settings.fontPair);

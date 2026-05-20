@@ -7,18 +7,17 @@ import { Modal } from "@/components/modal";
 import { Divider } from "@/components/divider";
 import { usePersistedStore, type AccountMeta } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { generateRandomSeed, truncateIdentity } from "@/lib/crypto";
 import { unlockVault, createVault, createWallet, exportVault } from "@/lib/vault";
 
 export default function VaultDetailScreen() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  useAutoLock();
 
   const vaults = usePersistedStore((s) => s.vaults);
   const settings = usePersistedStore((s) => s.settings);
   const updateVault = usePersistedStore((s) => s.updateVault);
+  const setActiveAccountIndex = usePersistedStore((s) => s.setActiveAccountIndex);
   const sessionUnlock = useSessionStore((s) => s.unlock);
   const sessionWallets = useSessionStore((s) => s.wallets);
 
@@ -130,6 +129,12 @@ export default function VaultDetailScreen() {
       updateVault(vault!.id, { encryptedData: newEncrypted, accounts: updatedAccounts });
       if (isActive) {
         sessionUnlock(vault!.id, remaining, remaining.map(createWallet));
+        const activeIdx = settings.activeAccountIndex;
+        if (removingAccount.index === activeIdx) {
+          setActiveAccountIndex(0);
+        } else if (removingAccount.index < activeIdx) {
+          setActiveAccountIndex(activeIdx - 1);
+        }
       }
       setRemovingAccount(null);
     } catch {
@@ -217,7 +222,7 @@ export default function VaultDetailScreen() {
             Add account
           </div>
           <Input label="Account name" value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="e.g. DeFi, Staking" autoFocus style={{ fontFamily: "var(--font-sans)" }} />
-          <Input type="password" label="Vault password" value={addPassword} onChange={(e) => { setAddPassword(e.target.value); setAddError(""); }} onKeyDown={(e) => e.key === "Enter" && doAdd()} error={addError} placeholder="••••••••••" />
+          <Input type="password" label="Vault password" value={addPassword} onChange={(e) => { setAddPassword(e.target.value); setAddError(""); }} onKeyDown={(e) => e.key === "Enter" && !addLoading && doAdd()} error={addError} placeholder="••••••••••" />
           <Button onClick={doAdd} loading={addLoading} disabled={!addName.trim() || !addPassword}>Add account</Button>
           <Button variant="ghost" shape="sharp" size="md" style={{ width: "auto", margin: "0 auto" }} onClick={() => setAddingAccount(false)}>Cancel</Button>
         </div>

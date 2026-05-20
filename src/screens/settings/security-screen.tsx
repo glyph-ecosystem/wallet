@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { AppShell } from "@/layouts/app-shell";
 import { usePersistedStore } from "@/store/persisted";
-import { useAutoLock } from "@/hooks/use-auto-lock";
 import { unlockVault } from "@/lib/vault";
 
 const TIMEOUT_OPTIONS: { label: string; value: number }[] = [
@@ -24,7 +23,6 @@ const CLIPBOARD_OPTIONS: { label: string; value: number }[] = [
 
 export default function SecurityScreen() {
   const navigate = useNavigate();
-  useAutoLock();
 
   const autoLockMinutes = usePersistedStore((s) => s.settings.autoLockMinutes);
   const lockOnWindowBlur = usePersistedStore((s) => s.settings.lockOnWindowBlur);
