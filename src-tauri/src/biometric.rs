@@ -1,8 +1,108 @@
-use keyring::Entry;
 use tauri::command;
 
-fn keyring_entry(vault_id: &str) -> Result<Entry, String> {
-    Entry::new("sigil-bio", vault_id).map_err(|e| e.to_string())
+// ── Credential storage ─────────────────────────────────────────────────────
+//
+// On Windows the `keyring` crate writes to a session-scoped store that doesn't
+// survive app restart. We use CredWriteW/CredReadW directly with
+// CRED_PERSIST_LOCAL_MACHINE to guarantee persistence.
+
+#[cfg(target_os = "windows")]
+mod cred_store {
+    use windows::Win32::Foundation::FILETIME;
+    use windows::Win32::Security::Credentials::{
+        CredDeleteW, CredFree, CredReadW, CredWriteW, CREDENTIALW, CRED_PERSIST_LOCAL_MACHINE,
+        CRED_TYPE_GENERIC,
+    };
+    use windows::core::{PCWSTR, PWSTR};
+
+    fn to_wide(s: &str) -> Vec<u16> {
+        s.encode_utf16().chain(std::iter::once(0)).collect()
+    }
+
+    fn target(vault_id: &str) -> Vec<u16> {
+        to_wide(&format!("sigil-vault/{}", vault_id))
+    }
+
+    pub fn store(vault_id: &str, password: &str) -> Result<(), String> {
+        let target = target(vault_id);
+        let mut blob = password.as_bytes().to_vec();
+
+        let cred = CREDENTIALW {
+            Flags: 0,
+            Type: CRED_TYPE_GENERIC,
+            TargetName: PWSTR(target.as_ptr() as *mut u16),
+            Comment: PWSTR::null(),
+            LastWritten: FILETIME::default(),
+            CredentialBlobSize: blob.len() as u32,
+            CredentialBlob: blob.as_mut_ptr(),
+            Persist: CRED_PERSIST_LOCAL_MACHINE,
+            AttributeCount: 0,
+            Attributes: std::ptr::null_mut(),
+            TargetAlias: PWSTR::null(),
+            UserName: PWSTR::null(),
+        };
+
+        unsafe { CredWriteW(&cred, 0).map_err(|e| e.to_string()) }
+    }
+
+    pub fn load(vault_id: &str) -> Result<String, String> {
+        let target = target(vault_id);
+        let mut pcred: *mut CREDENTIALW = std::ptr::null_mut();
+
+        unsafe {
+            CredReadW(PCWSTR(target.as_ptr()), CRED_TYPE_GENERIC, 0, &mut pcred)
+                .map_err(|e| format!("CredReadW: {e}"))?;
+
+            let cred = &*pcred;
+            let blob = std::slice::from_raw_parts(
+                cred.CredentialBlob,
+                cred.CredentialBlobSize as usize,
+            );
+            let password = std::str::from_utf8(blob)
+                .map_err(|e| format!("utf8: {e}"))?
+                .to_string();
+
+            CredFree(pcred as *const _);
+            Ok(password)
+        }
+    }
+
+    pub fn delete(vault_id: &str) -> Result<(), String> {
+        let target = target(vault_id);
+        unsafe {
+            CredDeleteW(PCWSTR(target.as_ptr()), CRED_TYPE_GENERIC, 0)
+                .map_err(|e| e.to_string())
+        }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+mod cred_store {
+    use keyring::Entry;
+
+    fn entry(vault_id: &str) -> Result<Entry, String> {
+        Entry::new("sigil-bio", vault_id).map_err(|e| e.to_string())
+    }
+
+    pub fn store(vault_id: &str, password: &str) -> Result<(), String> {
+        let e = entry(vault_id)?;
+        e.set_password(password).map_err(|e| e.to_string())?;
+        e.get_password()
+            .map_err(|e| format!("stored but unreadable: {e}"))?;
+        Ok(())
+    }
+
+    pub fn load(vault_id: &str) -> Result<String, String> {
+        entry(vault_id)?
+            .get_password()
+            .map_err(|e| e.to_string())
+    }
+
+    pub fn delete(vault_id: &str) -> Result<(), String> {
+        entry(vault_id)?
+            .delete_credential()
+            .map_err(|e| e.to_string())
+    }
 }
 
 // ── macOS: LAContext via objc ──────────────────────────────────────────────
@@ -17,7 +117,6 @@ mod platform {
     #[link(name = "LocalAuthentication", kind = "framework")]
     extern "C" {}
 
-    // LAPolicyDeviceOwnerAuthenticationWithBiometrics = 1
     const LA_BIOMETRICS: usize = 1;
 
     pub fn available() -> bool {
@@ -135,24 +234,16 @@ pub async fn check_biometric_available() -> bool {
 
 #[command]
 pub async fn enable_biometric(vault_id: String, password: String) -> Result<(), String> {
-    tokio::task::spawn_blocking(move || {
-        let entry = keyring_entry(&vault_id)?;
-        entry.set_password(&password).map_err(|e| e.to_string())?;
-        // Verify the credential is readable immediately after storing
-        entry.get_password().map_err(|e| format!("stored but unreadable: {e}"))?;
-        Ok(())
-    })
-    .await
-    .map_err(|e| e.to_string())?
+    tokio::task::spawn_blocking(move || cred_store::store(&vault_id, &password))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[command]
 pub async fn biometric_unlock(vault_id: String) -> Result<String, String> {
     tokio::task::spawn_blocking(move || {
         platform::authenticate("Unlock Sigil vault")?;
-        keyring_entry(&vault_id)?
-            .get_password()
-            .map_err(|e| e.to_string())
+        cred_store::load(&vault_id)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -160,11 +251,7 @@ pub async fn biometric_unlock(vault_id: String) -> Result<String, String> {
 
 #[command]
 pub async fn disable_biometric(vault_id: String) -> Result<(), String> {
-    tokio::task::spawn_blocking(move || {
-        keyring_entry(&vault_id)?
-            .delete_credential()
-            .map_err(|e| e.to_string())
-    })
-    .await
-    .map_err(|e| e.to_string())?
+    tokio::task::spawn_blocking(move || cred_store::delete(&vault_id))
+        .await
+        .map_err(|e| e.to_string())?
 }
