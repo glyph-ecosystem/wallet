@@ -17,8 +17,11 @@ Use any valid 55-char Qubic seed. Generate one with: bun run dev → "Create wal
 <html>
 <body>
 <script>
+function toBase64Url(str) {
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
 function request(type, params) {
-  const payload = btoa(JSON.stringify({
+  const payload = toBase64Url(JSON.stringify({
     type,
     nonce: Math.random().toString(36).slice(2, 12),
     dapp: { name: "Test dApp", origin: "http://localhost" },
@@ -353,7 +356,7 @@ request('sc_call', {
 
 ### 12f. SC call — unknown contract
 ```js
-request('sc_call', { contract_index: 99, input_type: 5, payload: btoa('hello') })
+request('sc_call', { contract_index: 99, input_type: 5, payload: toBase64Url('hello') })
 ```
 1. Sheet shows "CONTRACT #99 · Input 5"
 2. `[SHOW PAYLOAD · 5B]` toggle → raw hex visible
