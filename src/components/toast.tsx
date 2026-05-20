@@ -19,7 +19,9 @@ const VARIANT_COLOR: Record<ToastVariant, string> = {
 const EASE_OUT = [0, 0, 0.2, 1] as const;
 
 export function Toast({ message, variant = "neutral", style }: ToastProps) {
+  const live = variant === "error" || variant === "warning" ? "assertive" : "polite";
   return (
+    <div aria-live={live} aria-atomic="true">
     <AnimatePresence>
       {message && (
         <motion.div
@@ -42,5 +44,6 @@ export function Toast({ message, variant = "neutral", style }: ToastProps) {
         </motion.div>
       )}
     </AnimatePresence>
+    </div>
   );
 }
