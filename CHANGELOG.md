@@ -1,5 +1,22 @@
 # sigil
 
+## 0.6.0
+
+### Minor Changes
+
+- 14f5762: Add hide-to-tray on close: system tray icon with Show/Quit menu, left-click to restore, configurable in Notifications settings. Fix notification permission not persisting across restarts. Disable context menu globally.
+- 8dcaf04: Transaction history now supports infinite scroll (50 tx/page) and a filter sheet: direction (all/in/out) and status (all/confirmed/failed/sc call). Active filters shown as dismissable chips. New Sheet component for bottom-sheet UIs.
+- 14f5762: Editable price override ($/bQU) in Send and Send Many screens: pencil icon opens a sheet to enter a custom rate, USD totals update live, reset-to-market button when overridden
+- 14f5762: Add splash screen that enforces app updates on startup: checks for updates immediately, shows cycling Qubic facts, blocks navigation during download/install with a progress bar, then relaunches. Add internal transaction memos: attach a private note to any confirmed tx, stored locally in the vault, exportable as JSON.
+
+### Patch Changes
+
+- 14f5762: History filter sheet improvements: replace status/period/epoch filters with a date range picker, cap sheet at 80vh with scrollable content, sticky Reset/Apply footer, compact QU amounts (1K/1M/1B), transaction dates from timestamp, icon buttons in header with absolute-centered title
+- 14f5762: Bundle all font pairs (Space Grotesk, Space Mono, Geist, Inter, JetBrains Mono, IBM Plex, Roboto, Fira Sans, Doto) locally via @fontsource packages; remove Google Fonts network dependency so fonts render correctly on all platforms including Windows
+- 95a6167: Harden CSP: restrict connect-src to rpc.qubic.org and raw.githubusercontent.com, remove Google Fonts from font-src, remove https: wildcard from img-src. Add cargo-audit and npm audit to CI. Add SECURITY.md with vulnerability reporting instructions and architecture notes for researchers.
+- 95a6167: Show a memo note field on the Send and Send Many done screens so users can annotate a transaction immediately after broadcast, before navigating away
+- 95a6167: Fix sheet scroll area clipping (padding between content and edges), absolutely center screen header titles so action buttons no longer shift the title, replace FILTER text and refresh character with consistent icon buttons in transaction history
+
 ## 0.5.0
 
 ### Minor Changes
