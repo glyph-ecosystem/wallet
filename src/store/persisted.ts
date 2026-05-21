@@ -167,6 +167,8 @@ interface PersistedState {
   settings: AppSettings;
   contacts: Contact[];
   pendingTxs: PendingTx[];
+  /** tx hash → user note, persisted locally */
+  txMemos: Record<string, string>;
   addVault: (vault: VaultMeta) => void;
   updateVault: (id: string, updates: Partial<Omit<VaultMeta, "id">>) => void;
   /** Removes the vault; if it was active, falls back to the first remaining vault (or null). */
@@ -187,6 +189,8 @@ interface PersistedState {
   revokeDapp: (origin: string) => void;
   /** Removes a single permission; prunes the dApp entry entirely when no permissions remain. */
   revokeDappPermission: (origin: string, permission: ApprovedDapp["permissions"][number]) => void;
+  setTxMemo: (hash: string, memo: string) => void;
+  deleteTxMemo: (hash: string) => void;
 }
 
 /** Zustand store backed by Tauri LazyStore (`sigil.json` on disk). Survives app restarts. */
@@ -197,6 +201,7 @@ export const usePersistedStore = create<PersistedState>()(
       settings: DEFAULT_SETTINGS,
       contacts: [],
       pendingTxs: [],
+      txMemos: {},
 
       addVault: (vault) =>
         set((s) => ({ vaults: [...s.vaults, vault] })),
@@ -283,6 +288,16 @@ export const usePersistedStore = create<PersistedState>()(
             .filter((d) => d.permissions.length > 0);
           return { settings: { ...s.settings, approvedDapps } };
         }),
+
+      setTxMemo: (hash, memo) =>
+        set((s) => ({ txMemos: { ...s.txMemos, [hash]: memo } })),
+
+      deleteTxMemo: (hash) =>
+        set((s) => {
+          const next = { ...s.txMemos };
+          delete next[hash];
+          return { txMemos: next };
+        }),
     }),
     {
       name: "sigil-persisted",
@@ -294,11 +309,15 @@ export const usePersistedStore = create<PersistedState>()(
         const vaults = Array.isArray(ps.vaults) ? ps.vaults : currentState.vaults;
         const contacts = Array.isArray(ps.contacts) ? ps.contacts : currentState.contacts;
         const pendingTxs = Array.isArray(ps.pendingTxs) ? ps.pendingTxs : currentState.pendingTxs;
+        const txMemos =
+          ps.txMemos && typeof ps.txMemos === "object" && !Array.isArray(ps.txMemos)
+            ? ps.txMemos
+            : currentState.txMemos;
         const settings =
           ps.settings && typeof ps.settings === "object" && !Array.isArray(ps.settings)
             ? { ...currentState.settings, ...ps.settings }
             : currentState.settings;
-        return { ...currentState, vaults, contacts, pendingTxs, settings };
+        return { ...currentState, vaults, contacts, pendingTxs, txMemos, settings };
       },
     },
   ),

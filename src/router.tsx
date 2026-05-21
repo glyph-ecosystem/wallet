@@ -3,7 +3,7 @@ import { createHashRouter } from "react-router-dom";
 import { AnimatedLayout } from "@/layouts/animated-layout";
 import { ErrorBoundary } from "@/components/error-boundary";
 
-const RootScreen = lazy(() => import("@/screens/root-screen"));
+const SplashScreen = lazy(() => import("@/screens/splash/splash-screen"));
 const LockScreen = lazy(() => import("@/screens/lock/lock-screen"));
 const WelcomeScreen = lazy(() => import("@/screens/setup/welcome-screen"));
 const CreateVaultScreen = lazy(() => import("@/screens/setup/create-vault-screen"));
@@ -42,7 +42,7 @@ export const router = createHashRouter([
   {
     element: <AnimatedLayout />,
     children: [
-      { path: "/", element: <Screen component={RootScreen} /> },
+      { path: "/", element: <Screen component={SplashScreen} /> },
       { path: "/lock", element: <Screen component={LockScreen} /> },
       { path: "/setup", element: <Screen component={WelcomeScreen} /> },
       { path: "/setup/create", element: <Screen component={CreateVaultScreen} /> },

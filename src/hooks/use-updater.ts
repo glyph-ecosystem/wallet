@@ -26,21 +26,17 @@ export function useUpdater(): UpdaterState {
   useEffect(() => {
     getVersion().then(setAppVersion).catch(() => {});
 
-    // Delay check to avoid slowing down startup
-    const timer = setTimeout(() => {
-      check()
-        .then((u) => {
-          if (u) {
-            setUpdate(u);
-          } else {
-            setUpToDate(true);
-          }
-        })
-        .catch(() => setCheckError(true))
-        .finally(() => setChecking(false));
-    }, 8_000);
+    check()
+      .then((u) => {
+        if (u) {
+          setUpdate(u);
+        } else {
+          setUpToDate(true);
+        }
+      })
+      .catch(() => setCheckError(true))
+      .finally(() => setChecking(false));
 
-    return () => clearTimeout(timer);
   }, []);
 
   async function install() {
