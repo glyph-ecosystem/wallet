@@ -62,11 +62,12 @@ export default function SecurityScreen() {
       setEnableLoading(false);
       return;
     }
+    const pw = enablePw;
+    setEnablePw(""); // clear from React state before handing off to biometric system
     try {
-      await invoke("enable_biometric", { vaultId: vault.id, password: enablePw });
+      await invoke("enable_biometric", { vaultId: vault.id, password: pw });
       updateSettings({ biometricVaultIds: [...biometricVaultIds, vault.id] });
       setEnabling(false);
-      setEnablePw("");
     } catch (e) {
       setEnableError(`SECURE STORAGE FAILED: ${e}`);
     } finally {
