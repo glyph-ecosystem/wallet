@@ -109,7 +109,7 @@ export default function CreateVaultScreen() {
   }
 
   async function finish() {
-    if (password.length < 10) return;
+    if (strength.level < 1) return;
     setLoading(true);
     try {
       const encryptedData = await createVault(password, [seed]);
@@ -386,7 +386,7 @@ export default function CreateVaultScreen() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !loading && password.length >= 10 && finish()}
+                onKeyDown={(e) => e.key === "Enter" && !loading && strength.level >= 1 && finish()}
                 placeholder="••••••••••"
                 autoComplete="new-password"
                 autoFocus
@@ -413,7 +413,7 @@ export default function CreateVaultScreen() {
               )}
             </div>
 
-            <Button onClick={finish} loading={loading} disabled={password.length < 10}>
+            <Button onClick={finish} loading={loading} disabled={strength.level < 1}>
               Create vault
             </Button>
           </div>
