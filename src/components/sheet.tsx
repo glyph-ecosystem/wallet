@@ -53,7 +53,10 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
               background: "var(--color-bg-elevated)",
               borderTop: "1px solid var(--color-border-strong)",
               borderRadius: "var(--radius-card) var(--radius-card) 0 0",
-              padding: "var(--space-4) var(--space-4) var(--space-8)",
+              padding: "var(--space-4) var(--space-4) 0",
+              maxHeight: "80vh",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             {/* Drag handle */}
@@ -79,7 +82,9 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
               </div>
             )}
 
-            {children}
+            <div style={{ overflowY: "auto", flex: 1, paddingBottom: "var(--space-8)" }}>
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       )}
