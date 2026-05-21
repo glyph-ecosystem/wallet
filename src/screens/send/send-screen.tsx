@@ -43,7 +43,9 @@ export default function SendScreen() {
   const [txHash, setTxHash] = useState("");
   const [txError, setTxError] = useState("");
   const [savedTargetTick, setSavedTargetTick] = useState(0);
-  const [watchConfirmation, setWatchConfirmation] = useState(false);
+  const [watchConfirmation, setWatchConfirmation] = useState(
+    !!(settings.notificationsEnabled && settings.notifyOnConfirmed)
+  );
   const [watchResult, setWatchResult] = useState<"pending" | "confirmed" | "failed">("pending");
 
   const [showPicker, setShowPicker] = useState(false);
