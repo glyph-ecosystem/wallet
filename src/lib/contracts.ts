@@ -82,7 +82,24 @@ for (const [key, value] of Object.entries(contractPkg)) {
   prefixToIndex[key.slice(0, -"_CONTRACT_INDEX".length)] = value;
 }
 
-// CONTRACT_PROCEDURE_NAMES: from _INPUT_TYPE exports; prefer write ops over GET reads.
+// Build set of valid write procedures from build*Input methods on namespace objects.
+// This distinguishes callable SC procedures from read-only query functions, which can
+// share the same numeric inputType value in separate call paths.
+const validProcedures = new Set<string>(); // "contractIndex:PROC_SCREAMING_CASE"
+for (const [, nsValue] of Object.entries(contractPkg)) {
+  if (typeof nsValue !== "object" || nsValue === null) continue;
+  const rec = nsValue as Record<string, unknown>;
+  if (typeof rec.contractIndex !== "number") continue;
+  const idx = rec.contractIndex as number;
+  for (const methodKey of Object.keys(rec)) {
+    if (!methodKey.startsWith("build") || !methodKey.endsWith("Input")) continue;
+    const camel = methodKey.slice("build".length, -"Input".length);
+    const screaming = camel.replace(/([A-Z])/g, "_$1").toUpperCase().replace(/^_/, "");
+    validProcedures.add(`${idx}:${screaming}`);
+  }
+}
+
+// CONTRACT_PROCEDURE_NAMES: only emit entries for confirmed write procedures.
 for (const [key, value] of Object.entries(contractPkg)) {
   if (typeof value !== "number" || !key.endsWith("_INPUT_TYPE")) continue;
   let bestPrefix = "";
@@ -90,11 +107,16 @@ for (const [key, value] of Object.entries(contractPkg)) {
     if (key.startsWith(prefix + "_") && prefix.length > bestPrefix.length) bestPrefix = prefix;
   }
   if (!bestPrefix) continue;
-  const compositeKey = `${prefixToIndex[bestPrefix]}:${value}`;
+  const contractIdx = prefixToIndex[bestPrefix];
   const proc = key.slice(bestPrefix.length + 1, -"_INPUT_TYPE".length);
-  if (CONTRACT_PROCEDURE_NAMES[compositeKey] || proc.startsWith("GET_")) continue;
+  if (!validProcedures.has(`${contractIdx}:${proc}`)) continue;
+  const compositeKey = `${contractIdx}:${value}`;
+  if (CONTRACT_PROCEDURE_NAMES[compositeKey]) continue;
   CONTRACT_PROCEDURE_NAMES[compositeKey] = toTitleCase(proc);
 }
+
+// Qearn lock (inputType=1) is a real SC procedure but lacks a buildLockInput helper.
+CONTRACT_PROCEDURE_NAMES[`${QEARN_CONTRACT_INDEX}:1`] ??= "Lock";
 
 // Pre-computed contract destination identities.
 export const QUTIL_ADDRESS = contractIndexToIdentity(Q_UTIL_CONTRACT_INDEX);
