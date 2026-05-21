@@ -10,6 +10,7 @@ import { Input } from "@/components/input";
 import { IdentityDisplay } from "@/components/identity-display";
 import { usePersistedStore, type PendingTx } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
+import { Download } from "lucide-react";
 import {
   useTxHistory,
   type TxHistoryItem,
@@ -61,10 +62,26 @@ export default function HistoryScreen() {
   const wallets = useSessionStore((s) => s.wallets);
   const identity = wallets[settings.activeAccountIndex]?.identity ?? null;
 
+  const txMemos = usePersistedStore((s) => s.txMemos);
+
   const [filters, setFilters] = useState<TxFilters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
   const [draft, setDraft] = useState<DraftInputs>(toDraft(DEFAULT_FILTERS));
   const [detail, setDetail] = useState<TxHistoryItem | PendingTx | null>(null);
+
+  function exportMemos() {
+    const entries = Object.entries(txMemos).filter(([, v]) => v.trim());
+    if (!entries.length) return;
+    const blob = new Blob([JSON.stringify(Object.fromEntries(entries), null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sigil-memos-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const hasMemos = Object.values(txMemos).some((v) => v.trim());
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -149,6 +166,11 @@ export default function HistoryScreen() {
           onBack={() => navigate("/dashboard")}
           action={
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-4)" }}>
+              {hasMemos && (
+                <button type="button" onClick={exportMemos} aria-label="Export memos" style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", color: "var(--color-text-secondary)" }}>
+                  <Download size={14} />
+                </button>
+              )}
               <button type="button" onClick={() => setFilterOpen(true)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", letterSpacing: "0.05em", padding: 0, display: "flex", alignItems: "center", gap: 4, color: hasActive ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}>
                 FILTER{hasActive && <span style={{ color: "var(--color-status-success)", fontSize: 8, lineHeight: 1 }}>●</span>}
               </button>
@@ -291,7 +313,7 @@ export default function HistoryScreen() {
 
       {/* Detail modal */}
       <Modal open={!!detail} onClose={() => setDetail(null)}>
-        {detail && <TxDetail detail={detail} identity={identity} currentTick={currentTick} />}
+        {detail && <TxDetail detail={detail} identity={identity} currentTick={currentTick} txMemos={txMemos} />}
       </Modal>
     </AppShell>
   );
@@ -318,6 +340,20 @@ const APPLY_BTN: React.CSSProperties = {
   fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)",
   color: "var(--color-bg-base)", letterSpacing: "0.05em",
   padding: "var(--space-2) var(--space-4)",
+};
+
+const GHOST_BTN_DETAIL: React.CSSProperties = {
+  background: "none", border: "none", cursor: "pointer",
+  fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)",
+  color: "var(--color-text-disabled)", letterSpacing: "0.05em", padding: 0,
+};
+
+const APPLY_BTN_DETAIL: React.CSSProperties = {
+  background: "none", border: "1px solid var(--color-border-strong)",
+  borderRadius: "var(--radius-sharp)", cursor: "pointer",
+  fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)",
+  color: "var(--color-text-primary)", letterSpacing: "0.05em",
+  padding: "var(--space-1) var(--space-3)",
 };
 
 // ── UI sub-components ─────────────────────────────────────────────────────────
@@ -404,11 +440,25 @@ function StatusText({ children, color }: { children: ReactNode; color: string })
 
 // ── Detail modal ──────────────────────────────────────────────────────────────
 
-function TxDetail({ detail, identity, currentTick }: {
+function TxDetail({ detail, identity, currentTick, txMemos }: {
   detail: TxHistoryItem | PendingTx; identity: string | null; currentTick: number;
+  txMemos: Record<string, string>;
 }) {
   const hideBalances = usePersistedStore((s) => s.settings.hideBalances);
+  const setTxMemo = usePersistedStore((s) => s.setTxMemo);
+  const deleteTxMemo = usePersistedStore((s) => s.deleteTxMemo);
   const isPending = (d: TxHistoryItem | PendingTx): d is PendingTx => "broadcastAt" in d;
+
+  const hash = detail.hash ?? null;
+  const [memo, setMemo] = useState(hash ? (txMemos[hash] ?? "") : "");
+  const [memoEditing, setMemoEditing] = useState(false);
+
+  function saveMemo() {
+    if (!hash) return;
+    if (memo.trim()) setTxMemo(hash, memo.trim());
+    else deleteTxMemo(hash);
+    setMemoEditing(false);
+  }
 
   const contractName = detail.destination ? KNOWN_CONTRACT_ADDRESSES[detail.destination] : undefined;
   const fromContract = detail.source ? KNOWN_CONTRACT_ADDRESSES[detail.source] : undefined;
@@ -447,6 +497,50 @@ function TxDetail({ detail, identity, currentTick }: {
       <DetailRow label="To">{detail.destination ? <IdentityDisplay identity={detail.destination} /> : <Dash />}</DetailRow>
       <DetailRow label="Tick"><MonoVal>{detail.tickNumber ?? "—"}</MonoVal></DetailRow>
       {detail.hash && <DetailRow label="Hash"><IdentityDisplay identity={detail.hash} /></DetailRow>}
+
+      {hash && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Note</span>
+            {!memoEditing && (
+              <button type="button" onClick={() => setMemoEditing(true)} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", padding: 0 }}>
+                {memo.trim() ? "EDIT" : "+ ADD"}
+              </button>
+            )}
+          </div>
+          {memoEditing ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              <textarea
+                autoFocus
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="Add a note to this transaction..."
+                rows={3}
+                style={{
+                  width: "100%",
+                  background: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-border-strong)",
+                  borderRadius: "var(--radius-sharp)",
+                  color: "var(--color-text-primary)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--text-mono-sm)",
+                  letterSpacing: "0.04em",
+                  lineHeight: 1.6,
+                  padding: "var(--space-2) var(--space-3)",
+                  resize: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "var(--space-3)" }}>
+                <button type="button" onClick={() => { setMemo(hash ? (txMemos[hash] ?? "") : ""); setMemoEditing(false); }} style={GHOST_BTN_DETAIL}>CANCEL</button>
+                <button type="button" onClick={saveMemo} style={APPLY_BTN_DETAIL}>SAVE</button>
+              </div>
+            </div>
+          ) : memo.trim() ? (
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-primary)", letterSpacing: "0.04em", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{memo.trim()}</span>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
