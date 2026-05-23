@@ -24,6 +24,9 @@ const FOCUSABLE = [
 export function Modal({ open, onClose, children, style, title }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<Element | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -39,7 +42,7 @@ export function Modal({ open, onClose, children, style, title }: ModalProps) {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.stopImmediatePropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab") return;
@@ -63,7 +66,7 @@ export function Modal({ open, onClose, children, style, title }: ModalProps) {
       document.removeEventListener("keydown", onKey);
       (returnFocusRef.current as HTMLElement | null)?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return createPortal(
     <AnimatePresence>
