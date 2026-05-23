@@ -3,6 +3,7 @@ mod biometric;
 mod clipboard;
 mod commands;
 mod deep_link;
+mod store_crypto;
 
 use std::sync::atomic::Ordering;
 
@@ -17,6 +18,8 @@ use tauri::Manager;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_deep_link::init())
@@ -104,6 +107,8 @@ pub fn run() {
             commands::lock_clipboard,
             commands::post_callback,
             commands::set_hide_to_tray,
+            store_crypto::encrypt_store_value,
+            store_crypto::decrypt_store_value,
             biometric::check_biometric_available,
             biometric::enable_biometric,
             biometric::biometric_unlock,

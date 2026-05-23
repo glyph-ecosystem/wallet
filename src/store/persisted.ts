@@ -1,4 +1,5 @@
 import { LazyStore } from "@tauri-apps/plugin-store";
+import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { StateStorage } from "zustand/middleware";
@@ -136,19 +137,23 @@ const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T | null> =>
 const tauriStorage: StateStorage = {
   getItem: async (name) => {
     try {
-      return (await withTimeout(_disk.get<string>(name), 1500)) ?? null;
+      const raw = (await withTimeout(_disk.get<string>(name), 1500)) ?? null;
+      if (raw === null) return null;
+      return await invoke<string>("decrypt_store_value", { value: raw });
     } catch {
       return null;
     }
   },
   setItem: async (name, value) => {
     try {
-      await _disk.set(name, value);
+      const encrypted = await invoke<string>("encrypt_store_value", { value });
+      await _disk.set(name, encrypted);
       await _disk.save();
     } catch (err) {
       console.error("[sigil] disk write failed, retrying once:", err);
       try {
-        await _disk.set(name, value);
+        const encrypted = await invoke<string>("encrypt_store_value", { value });
+        await _disk.set(name, encrypted);
         await _disk.save();
       } catch (err2) {
         console.error("[sigil] disk write failed permanently — data may be lost on restart:", err2);
