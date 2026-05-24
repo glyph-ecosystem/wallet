@@ -51,11 +51,12 @@ export default function ReceiveScreen() {
             <QRCodeSVG
               value={identity}
               size={200}
-              bgColor="transparent"
-              fgColor="var(--color-text-display)"
+              bgColor="#FFFFFF"
+              fgColor="#111111"
               level="M"
               aria-label={`QR code for address ${identity}`}
               role="img"
+              includeMargin
               style={{ display: "block", filter: hideBalances && !qrRevealed ? "blur(12px)" : "none", transition: "filter 0.15s ease" }}
             />
             {hideBalances && !qrRevealed && (
