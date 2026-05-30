@@ -16,6 +16,7 @@ import { useSessionStore } from "@/store/session";
 import { usePersistedStore } from "@/store/persisted";
 import { ScreenHeader } from "@/components/screen-header";
 import { recordAuditEvent } from "@/lib/audit-log";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { parseSigilEnvelope, REQUEST_TYPE_LABEL, type SigilCallbackResponse } from "@/lib/request-schema";
 import { evaluateRequestTrust, type RequestTrustInfo } from "@/lib/request-trust";
 
@@ -179,11 +180,21 @@ export default function RequestScreen() {
             });
           });
       }
+      if (envelope.redirect_uri) {
+        const encoded = btoa(body).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+        openUrl(`${envelope.redirect_uri}?result=${encoded}`).catch(() => {});
+      }
     }
     shiftPendingRequest();
   }
 
-  async function postCallback(callbackBody: string, callbackUrl: string | null, requestHistoryId: string | null) {
+  async function deliverResult(
+    callbackBody: string,
+    callbackUrl: string | null,
+    redirectUri: string | null,
+    requestHistoryId: string | null,
+  ) {
+    // POST callback (server-side delivery)
     if (callbackUrl) {
       try {
         await invoke("post_callback", { url: callbackUrl, body: callbackBody });
@@ -212,12 +223,19 @@ export default function RequestScreen() {
     } else {
       setSuccess((s) => s ? { ...s, callbackStatus: "ok" } : s);
     }
+
+    // Redirect URI (client-side delivery) — open browser with result in query param
+    if (redirectUri) {
+      const encoded = btoa(callbackBody).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+      await openUrl(`${redirectUri}?result=${encoded}`).catch(() => {});
+    }
   }
 
   async function handleApprove({ txHash, targetTick, identity }: ApproveResult) {
     if (!envelope) return;
     const requestHistoryId = makeRequestHistoryId();
     const callbackUrl = envelope.callback;
+    const redirectUri = envelope.redirect_uri ?? null;
 
     const response: SigilCallbackResponse = {
       status: "signed",
@@ -262,13 +280,14 @@ export default function RequestScreen() {
       requestHistoryId,
     };
     setSuccess(state);
-    await postCallback(callbackBody, callbackUrl, requestHistoryId);
+    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
   }
 
   async function handleApproveMessage({ signature, publicKey, identity }: SignMessageApproveResult) {
     if (!envelope) return;
     const requestHistoryId = makeRequestHistoryId();
     const callbackUrl = envelope.callback;
+    const redirectUri = envelope.redirect_uri ?? null;
 
     const response: SigilCallbackResponse = {
       status: "signed",
@@ -313,13 +332,14 @@ export default function RequestScreen() {
       requestHistoryId,
     };
     setSuccess(state);
-    await postCallback(callbackBody, callbackUrl, requestHistoryId);
+    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
   }
 
   async function handleApproveVerify({ valid, identity }: VerifyMessageResult) {
     if (!envelope) return;
     const requestHistoryId = makeRequestHistoryId();
     const callbackUrl = envelope.callback;
+    const redirectUri = envelope.redirect_uri ?? null;
 
     const response: SigilCallbackResponse = {
       status: "verified",
@@ -363,13 +383,14 @@ export default function RequestScreen() {
       requestHistoryId,
     };
     setSuccess(state);
-    await postCallback(callbackBody, callbackUrl, requestHistoryId);
+    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
   }
 
   async function handleApproveConnect({ identity, permissions }: ConnectApproveResult) {
     if (!envelope) return;
     const requestHistoryId = makeRequestHistoryId();
     const callbackUrl = envelope.callback;
+    const redirectUri = envelope.redirect_uri ?? null;
 
     const response: SigilCallbackResponse = {
       status: "connected",
@@ -413,13 +434,13 @@ export default function RequestScreen() {
       requestHistoryId,
     };
     setSuccess(state);
-    await postCallback(callbackBody, callbackUrl, requestHistoryId);
+    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
   }
 
   async function retryCallbackFromSuccess() {
     if (!success?.callbackUrl) return;
     setSuccess((current) => current ? { ...current, callbackStatus: "pending" } : current);
-    await postCallback(success.callbackBody, success.callbackUrl, success.requestHistoryId);
+    await deliverResult(success.callbackBody, success.callbackUrl, null, success.requestHistoryId);
   }
 
   async function saveResult(successState: SuccessState) {
