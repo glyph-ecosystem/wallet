@@ -5,6 +5,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { Tag } from "@/components/tag";
 import { Input } from "@/components/input";
 import { usePersistedStore } from "@/store/persisted";
+import { useUpdaterStore } from "@/store/updater";
 import { createNotificationEvent, publishNotificationEvent } from "@/lib/notification-events";
 import { requestNotificationPermission } from "@/lib/notifications";
 import { formatDate, truncateId } from "@/lib/format";
@@ -109,7 +110,8 @@ function SettingRow({
 
 export default function NotificationsScreen() {
   const navigate = useNavigate();
-  const isLinux = navigator.userAgent.toLowerCase().includes("linux");
+  const updaterContext = useUpdaterStore((s) => s.context);
+  const isAppImage = updaterContext?.platform === "linux" && updaterContext?.packageKind === "appimage";
   const pollingMode = usePollingMode();
 
   const enabled = usePersistedStore((s) => s.settings.notificationsEnabled);
@@ -260,7 +262,7 @@ export default function NotificationsScreen() {
         </div>
       )}
 
-      {isLinux && (
+      {isAppImage && (
         <div
           style={{
             fontFamily: "var(--font-sans)",
@@ -269,9 +271,10 @@ export default function NotificationsScreen() {
             lineHeight: 1.5,
           }}
         >
-          Linux desktop toasts require Sigil to be installed with its desktop entry. Bundled
-          packages register this automatically; when running an unpackaged dev build, install the
-          generated `.desktop` file first or notifications may be suppressed by the desktop shell.
+          Running as AppImage — notifications will work, but the Sigil icon won't appear in
+          toasts until the AppImage is integrated with your desktop. Right-click the AppImage
+          in your file manager and choose "Integrate" or "Add to Applications", or run it with
+          <code style={{ fontFamily: "var(--font-mono)" }}> --appimage-integrate</code> once.
         </div>
       )}
 
