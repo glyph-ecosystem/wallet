@@ -94,7 +94,7 @@ export default function HistoryScreen() {
   const { data: tickInfo } = useTickInfo();
   const currentTick = tickInfo?.tick ?? 0;
 
-  useEffect(() => { setFilters(DEFAULT_FILTERS); setDraft(toDraft(DEFAULT_FILTERS)); }, [identity]);
+  // Intentionally not resetting filters on identity change — user keeps their filter context when switching accounts.
 
   // Sync draft when sheet opens so edits start from current values
   useEffect(() => { if (filterOpen) setDraft(toDraft(filters)); }, [filterOpen]); // eslint-disable-line react-hooks/exhaustive-deps
