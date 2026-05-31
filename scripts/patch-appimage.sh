@@ -56,6 +56,18 @@ cd "$WORKDIR"
 echo "Extracting AppImage..."
 APPIMAGE_EXTRACT_AND_RUN=1 "$REPO_ROOT/$INPUT" --appimage-extract
 
+# ── Embed .DirIcon at AppDir root ────────────────────────────────────────────
+# appimagetool doesn't create this automatically. File managers (Nautilus,
+# Dolphin) and AppImageLauncher read .DirIcon to display the AppImage's icon.
+_DIRICON=$(find squashfs-root/usr/share/icons -name "*.png" -path "*/256x256/*" 2>/dev/null | head -1)
+[ -z "$_DIRICON" ] && _DIRICON=$(find squashfs-root/usr/share/icons -name "*.png" -path "*/128x128/*" 2>/dev/null | head -1)
+if [ -n "$_DIRICON" ]; then
+  echo "Installing .DirIcon from ${_DIRICON}..."
+  cp "$_DIRICON" squashfs-root/.DirIcon
+else
+  echo "WARNING: no icon found in usr/share/icons — .DirIcon not set"
+fi
+
 # ── Copy WebKit subprocess helpers ───────────────────────────────────────────
 WEBKIT_HELPERS="/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"
 mkdir -p squashfs-root/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1
