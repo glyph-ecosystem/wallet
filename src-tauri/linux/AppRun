@@ -13,28 +13,42 @@ fi
 export WEBKIT_EXEC_PATH="${APPDIR}/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1"
 export WEBKIT_DISABLE_COMPOSITING_MODE=1
 
+# WebKitGTK 2.40+ introduced a DMA-BUF renderer that creates an EGL display
+# before the apprun-hooks can force GDK_BACKEND=x11. This causes a hard abort
+# ("Could not create default EGL display: EGL_BAD_PARAMETER") on many systems.
+export WEBKIT_DISABLE_DMABUF_RENDERER=1
+
 # Session D-Bus — not always inherited when launched from a file manager.
 # Without this, zbus can't reach org.freedesktop.Notifications.
 if [ -z "${DBUS_SESSION_BUS_ADDRESS}" ]; then
   _UID=$(id -u)
-  [ -S "/run/user/${_UID}/bus" ] && \
+  if [ -S "/run/user/${_UID}/bus" ]; then
     export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_UID}/bus"
+  elif [ -S "/run/user/${_UID}/dbus-session" ]; then
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${_UID}/dbus-session"
+  fi
 fi
 
-# Self-register a local desktop entry + icon on first run so GNOME's
-# notification daemon associates toasts with this app.
+# Self-register a local desktop entry + icon on first run so the WM and
+# notification daemon can associate the app with the correct icon.
+# gtk-update-icon-cache is required — without it the hicolor theme cache
+# is stale and notify-rust sends notifications with no icon, which some
+# daemons (GNOME, KDE) silently drop or misidentify.
 _APPS="${HOME}/.local/share/applications"
 _DESKTOP="${_APPS}/sigil.desktop"
 if [ ! -f "${_DESKTOP}" ]; then
   mkdir -p "${_APPS}"
   _SRC=$(find "${APPDIR}" -maxdepth 1 -name "*.desktop" | head -1)
   [ -n "${_SRC}" ] && cp "${_SRC}" "${_DESKTOP}"
-  _ICON=$(find "${APPDIR}/usr/share/icons" -name "*.png" -path "*/128x128/*" | head -1)
-  if [ -n "${_ICON}" ]; then
-    mkdir -p "${HOME}/.local/share/icons/hicolor/128x128/apps"
-    cp "${_ICON}" "${HOME}/.local/share/icons/hicolor/128x128/apps/sigil.png"
-  fi
+  for _SIZE in 256x256 128x128; do
+    _ICON=$(find "${APPDIR}/usr/share/icons" -name "*.png" -path "*/${_SIZE}/*" 2>/dev/null | head -1)
+    if [ -n "${_ICON}" ]; then
+      mkdir -p "${HOME}/.local/share/icons/hicolor/${_SIZE}/apps"
+      cp "${_ICON}" "${HOME}/.local/share/icons/hicolor/${_SIZE}/apps/sigil.png"
+    fi
+  done
   update-desktop-database "${_APPS}" 2>/dev/null || true
+  gtk-update-icon-cache -f -t "${HOME}/.local/share/icons/hicolor" 2>/dev/null || true
 fi
 
 # Source linuxdeploy apprun-hooks — these set GDK_BACKEND=x11, GTK_PATH,
