@@ -271,10 +271,9 @@ export default function NotificationsScreen() {
             lineHeight: 1.5,
           }}
         >
-          Running as AppImage — notifications will work, but the Sigil icon won't appear in
-          toasts until the AppImage is integrated with your desktop. Right-click the AppImage
-          in your file manager and choose "Integrate" or "Add to Applications", or run it with
-          <code style={{ fontFamily: "var(--font-mono)" }}> --appimage-integrate</code> once.
+          Running as AppImage — a desktop entry is registered automatically on first launch so
+          notifications work with your desktop shell. If notifications don't appear, relaunch
+          Sigil once to complete registration.
         </div>
       )}
 
