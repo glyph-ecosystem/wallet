@@ -34,9 +34,13 @@ export function useVaultBalances() {
         { identityToPublicKey: idToPk },
       );
       if (!result.ok) throw result.error;
+      const balances = result.value.balances;
+      if (balances.length !== identities.length) {
+        throw new Error(`balance response length mismatch: expected ${identities.length}, got ${balances.length}`);
+      }
       const map: Record<string, bigint> = {};
       for (let i = 0; i < identities.length; i++) {
-        map[identities[i]] = result.value.balances[i] ?? 0n;
+        map[identities[i]] = balances[i];
       }
       return map;
     },
