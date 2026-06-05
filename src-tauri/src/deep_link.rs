@@ -357,7 +357,11 @@ fn validate(uri_str: &str) -> Result<ParsedRequest, String> {
 }
 
 pub fn process_url(app: &AppHandle, raw: &str) {
-    if !raw.starts_with("sigil://") {
+    // Quick scheme check before full parse to skip non-sigil arguments cheaply.
+    let is_sigil_scheme = url::Url::parse(raw)
+        .map(|u| u.scheme() == "sigil")
+        .unwrap_or(false);
+    if !is_sigil_scheme {
         return;
     }
     match validate(raw) {
