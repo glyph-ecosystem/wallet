@@ -453,16 +453,21 @@ export default function VaultDetailScreen() {
         />
       ))}
 
-      {!watchOnly && (
-        <div style={{ marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border-subtle)", display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
-          <Button variant="ghost" shape="sharp" size="sm" style={{ width: "auto" }} onClick={() => setShowExport(true)}>
-            Export vault
-          </Button>
-          <Button variant="ghost" shape="sharp" size="sm" style={{ width: "auto" }} onClick={() => { setShowRotate(true); setRotateDone(false); setRotateError(""); }}>
-            Change password
-          </Button>
-        </div>
-      )}
+      <div style={{ marginTop: "var(--space-4)", paddingTop: "var(--space-4)", borderTop: "1px solid var(--color-border-subtle)", display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+        <Button variant="ghost" shape="sharp" size="sm" style={{ width: "auto" }} onClick={() => navigate(`/vaults/${currentVault.id}/portfolio`)}>
+          Portfolio
+        </Button>
+        {!watchOnly && (
+          <>
+            <Button variant="ghost" shape="sharp" size="sm" style={{ width: "auto" }} onClick={() => setShowExport(true)}>
+              Export vault
+            </Button>
+            <Button variant="ghost" shape="sharp" size="sm" style={{ width: "auto" }} onClick={() => { setShowRotate(true); setRotateDone(false); setRotateError(""); }}>
+              Change password
+            </Button>
+          </>
+        )}
+      </div>
 
       {/* Export modal */}
       <Modal open={showExport} onClose={() => setShowExport(false)}>
