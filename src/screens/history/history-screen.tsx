@@ -567,11 +567,26 @@ function TxDetail({ detail, identity, currentTick, txMemos }: {
   const priceSnapshots = usePersistedStore((s) => s.priceSnapshots);
   const setTxMemo = usePersistedStore((s) => s.setTxMemo);
   const deleteTxMemo = usePersistedStore((s) => s.deleteTxMemo);
+  const txTags = usePersistedStore((s) => s.txTags);
+  const setTxTags = usePersistedStore((s) => s.setTxTags);
   const isPending = (d: TxHistoryItem | PendingTx): d is PendingTx => "broadcastAt" in d;
 
   const hash = detail.hash ?? null;
   const [memo, setMemo] = useState(hash ? (txMemos[hash] ?? "") : "");
   const [memoEditing, setMemoEditing] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const currentTags: string[] = hash ? (txTags[hash] ?? []) : [];
+
+  function addTag(raw: string) {
+    const tag = raw.trim().replace(/^#+/, "").toLowerCase();
+    if (!tag || !hash || currentTags.includes(tag)) { setTagInput(""); return; }
+    setTxTags(hash, [...currentTags, tag]);
+    setTagInput("");
+  }
+  function removeTag(tag: string) {
+    if (!hash) return;
+    setTxTags(hash, currentTags.filter((t) => t !== tag));
+  }
 
   function saveMemo() {
     if (!hash) return;
@@ -662,6 +677,26 @@ function TxDetail({ detail, identity, currentTick, txMemos }: {
           ) : memo.trim() ? (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-primary)", letterSpacing: "0.04em", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{memo.trim()}</span>
           ) : null}
+        </div>
+      )}
+      {hash && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tags</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
+            {currentTags.map((tag) => (
+              <button key={tag} type="button" onClick={() => removeTag(tag)} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "1px solid var(--color-border-strong)", borderRadius: "var(--radius-sharp)", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em", padding: "2px var(--space-2)" }}>
+                #{tag} ✕
+              </button>
+            ))}
+            <input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(tagInput); } }}
+              placeholder="#tag"
+              className="sigil-input"
+              style={{ background: "none", border: "1px dashed var(--color-border-strong)", borderRadius: "var(--radius-sharp)", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em", padding: "2px var(--space-2)", width: 72 }}
+            />
+          </div>
         </div>
       )}
     </div>
