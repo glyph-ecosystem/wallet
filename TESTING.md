@@ -1,4 +1,4 @@
-# Sigil Testing Guide
+# Glyph Testing Guide
 
 Manual release checklist for the current desktop app.
 
@@ -150,13 +150,13 @@ Expected:
 
 - Enable `Lock on sleep`.
 - Put the machine to sleep or lock the screen.
-- Resume and verify Sigil is on the lock screen.
+- Resume and verify Glyph is on the lock screen.
 
 ### Lock on window blur
 
 - Enable `Lock on window blur`.
 - Switch away from the app.
-- Verify Sigil locks immediately unless the explicit blur-lock bypass setting is enabled.
+- Verify Glyph locks immediately unless the explicit blur-lock bypass setting is enabled.
 
 ### Quick unlock / biometric unlock
 
@@ -290,7 +290,7 @@ Test on an installed build when possible.
 
 - Enable desktop notifications.
 - Send a test notification.
-- Verify the notification is attributed to Sigil and the text is readable.
+- Verify the notification is attributed to Glyph and the text is readable.
 
 ### Inbox and filters
 
@@ -303,7 +303,7 @@ Test on an installed build when possible.
 
 - Disable `Notify when locked`.
 - Lock the app and trigger a deep-link request or other notification-producing event.
-- Confirm the event is recorded in Sigil but does not reach the OS notification surface.
+- Confirm the event is recorded in Glyph but does not reach the OS notification surface.
 - Re-enable `Notify when locked` and confirm OS delivery is allowed while locked.
 
 ### Linux notes
@@ -343,7 +343,7 @@ function envelope(request, callback = "http://localhost:9999/cb") {
       nonce: crypto.randomUUID().replace(/-/g, "") + "ABCD",
       exp: Math.floor(Date.now() / 1000) + 300,
       dapp: {
-        name: "Sigil Test Page",
+        name: "Glyph Test Page",
         origin: "https://example.test"
       },
       ...request
@@ -355,7 +355,7 @@ function envelope(request, callback = "http://localhost:9999/cb") {
 function launch(request, callback) {
   const payload = toBase64Url(JSON.stringify(envelope(request, callback)));
   const a = document.createElement("a");
-  a.href = `sigil://v1/request?d=${payload}`;
+  a.href = `glyph://v1/request?d=${payload}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -366,8 +366,8 @@ const RECIPIENT = "UVYAOYTNYCRBVFBHNFIJUEOUEPEDIDUWWEAXKFSJEBJVASCQEROJOVOEEATL"
 
 <button onclick="launch({ type: 'transfer', to: RECIPIENT, amount: '1' })">Transfer</button>
 <button onclick="launch({ type: 'connect', permissions: ['transfer', 'sign_message'] })">Connect</button>
-<button onclick="launch({ type: 'sign_message', message: 'Hello Sigil' })">Sign message</button>
-<button onclick="launch({ type: 'verify_message', message: 'Hello Sigil', signature: 'AAAA', public_key: 'BBBB' })">Verify invalid</button>
+<button onclick="launch({ type: 'sign_message', message: 'Hello Glyph' })">Sign message</button>
+<button onclick="launch({ type: 'verify_message', message: 'Hello Glyph', signature: 'AAAA', public_key: 'BBBB' })">Verify invalid</button>
 <button onclick="launch({ type: 'sc_call', contract_index: 9, input_type: 1, amount: '10000000' })">Qearn lock</button>
 <button onclick="launch({ type: 'transfer', to: RECIPIENT, amount: '1' }, null)">No callback</button>
 </body>
@@ -384,9 +384,9 @@ nc -l 9999
 
 Verify OS handling:
 
-- macOS: `open "sigil://v1/request?..."`
-- Linux: `xdg-open "sigil://v1/request?..."`
-- Windows: open a `sigil://` URL from the browser or Run dialog
+- macOS: `open "glyph://v1/request?..."`
+- Linux: `xdg-open "glyph://v1/request?..."`
+- Windows: open a `glyph://` URL from the browser or Run dialog
 
 ### Request queueing
 
