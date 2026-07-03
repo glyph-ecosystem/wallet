@@ -7,14 +7,14 @@
 
 **Self-custodial Qubic desktop wallet**
 
-[![Release](https://img.shields.io/github/v/release/glyph-oss/glyph.app?style=flat-square&color=0d0d0d&labelColor=1a1a1a)](https://github.com/glyph-oss/glyph.app/releases/latest)
-[![CI](https://img.shields.io/github/actions/workflow/status/glyph-oss/glyph.app/changeset.yml?style=flat-square&label=build&color=0d0d0d&labelColor=1a1a1a)](https://github.com/glyph-oss/glyph.app/actions)
+[![Release](https://img.shields.io/github/v/release/glyph-ecosystem/wallet?style=flat-square&color=0d0d0d&labelColor=1a1a1a)](https://github.com/glyph-ecosystem/wallet/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/glyph-ecosystem/wallet/changeset.yml?style=flat-square&label=build&color=0d0d0d&labelColor=1a1a1a)](https://github.com/glyph-ecosystem/wallet/actions)
 [![License](https://img.shields.io/badge/license-source--available-0d0d0d?style=flat-square&labelColor=1a1a1a)](./LICENSE)
 [![Discord](https://img.shields.io/badge/discord-join-0d0d0d?style=flat-square&labelColor=1a1a1a)](https://discord.gg/s5qNRNGu96)
 
 Windows · macOS (Universal) · Linux (AppImage · .deb · .rpm)
 
-[**Download**](https://github.com/glyph-oss/glyph.app/releases/latest) · [Website](https://wallet.glyphq.org) · [Discord](https://discord.gg/s5qNRNGu96)
+[**Download**](https://github.com/glyph-ecosystem/wallet/releases/latest) · [Website](https://wallet.glyphq.org) · [Discord](https://discord.gg/s5qNRNGu96)
 
 </div>
 
@@ -95,14 +95,14 @@ sequenceDiagram
     Rust->>dApp: HTTP POST result JSON
 ```
 
-Use [`@glyph-oss/connect`](https://github.com/glyph-oss/glyph.connect) to build envelopes and handle result delivery from any framework.
+Use [`@glyph-ecosystem/connect`](https://github.com/glyph-ecosystem/glyph.connect) to build envelopes and handle result delivery from any framework.
 
 ## Build Locally
 
 **Requirements:** [Rust stable](https://rustup.rs/) · [Bun](https://bun.sh/) · [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/)
 
 ```sh
-git clone https://github.com/glyph-oss/glyph.app
+git clone https://github.com/glyph-ecosystem/wallet
 cd glyph.app
 bun install
 bun tauri dev        # dev server
@@ -140,7 +140,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 ## Community
 
 - **Discord:** https://discord.gg/s5qNRNGu96
-- **GitHub:** https://github.com/glyph-oss/glyph.app
+- **GitHub:** https://github.com/glyph-ecosystem/wallet
 - **Website:** https://wallet.glyphq.org
 
 ## License
