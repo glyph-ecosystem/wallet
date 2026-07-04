@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { FullPage } from "@/layouts/full-page";
-import { Button } from "@/components/button";
-import { Input } from "@/components/input";
 import { Modal } from "@/components/modal";
 import { usePersistedStore, type VaultColor, type AccountMeta } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
@@ -14,6 +13,70 @@ import { unlockVault, createVault, type VaultData } from "@/lib/vault";
 import { MAX_VAULT_ACCOUNTS } from "@/hooks/use-vault-balances";
 import { parseSignedExportEnvelope } from "@/lib/export-format";
 
+/* ------------------------------------------------------------------ */
+/*  Shared inline styles                                               */
+/* ------------------------------------------------------------------ */
+
+const accentBtn: React.CSSProperties = {
+  display: "flex", alignItems: "center", justifyContent: "center",
+  width: "100%", height: 48,
+  background: "var(--color-accent)", color: "#111",
+  borderRadius: 999, border: "none",
+  fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: "0.875rem",
+  cursor: "pointer",
+};
+
+const secondaryBtn: React.CSSProperties = {
+  display: "flex", alignItems: "center", justifyContent: "center",
+  width: "100%", height: 44,
+  background: "transparent", color: "var(--color-text-primary)",
+  borderRadius: "var(--radius-sharp)", border: "1px solid var(--color-border-strong)",
+  fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: "0.8125rem",
+  cursor: "pointer",
+};
+
+const ghostBtn: React.CSSProperties = {
+  display: "flex", alignItems: "center", justifyContent: "center",
+  width: "100%", height: 40,
+  background: "transparent", color: "var(--color-text-secondary)",
+  borderRadius: 0, border: "none",
+  fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: "0.8125rem",
+  cursor: "pointer",
+};
+
+const inputField: React.CSSProperties = {
+  background: "transparent", border: "none",
+  borderBottom: "1px solid var(--color-border-strong)",
+  borderRadius: 0, padding: "12px 0",
+  fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-lg)",
+  color: "var(--color-text-display)", width: "100%", outline: "none",
+};
+
+const fieldLabel: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: "var(--text-label)",
+  fontWeight: 500, color: "var(--color-text-secondary)",
+};
+
+const rowDivider: React.CSSProperties = {
+  height: 1,
+  background: "var(--color-border-subtle)",
+  margin: "0 -16px",
+};
+
+function Spinner() {
+  return (
+    <span style={{
+      width: 16, height: 16,
+      border: "2px solid currentColor", borderTopColor: "transparent",
+      borderRadius: "50%", animation: "spin 0.6s linear infinite",
+    }} />
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Import file data shape                                             */
+/* ------------------------------------------------------------------ */
+
 interface ImportFileData {
   name: string;
   color: VaultColor;
@@ -23,6 +86,10 @@ interface ImportFileData {
   signatureVerified: boolean;
   legacy: boolean;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 
 export default function WelcomeScreen() {
   const navigate = useNavigate();
@@ -40,6 +107,8 @@ export default function WelcomeScreen() {
   const [watchName, setWatchName] = useState("");
   const [watchInput, setWatchInput] = useState("");
   const [watchError, setWatchError] = useState("");
+
+  /* ---- business logic (unchanged) ---- */
 
   function parseWatchOnlyAccounts(raw: string): AccountMeta[] {
     return raw
@@ -151,7 +220,7 @@ export default function WelcomeScreen() {
       unlock(newVaultId, unlockSecureSession(finalSeeds));
       navigate("/dashboard", { replace: true });
     } catch {
-      setImportError("WRONG PASSWORD");
+      setImportError("Wrong password");
     } finally {
       setImportLoading(false);
     }
@@ -160,16 +229,16 @@ export default function WelcomeScreen() {
   function createWatchOnlyVault() {
     const name = watchName.trim();
     if (!name) {
-      setWatchError("NAME REQUIRED");
+      setWatchError("Name required");
       return;
     }
     const accounts = parseWatchOnlyAccounts(watchInput);
     if (accounts.length === 0) {
-      setWatchError("ADD AT LEAST ONE IDENTITY");
+      setWatchError("Add at least one identity");
       return;
     }
     if (accounts.some((account) => !account.identity || !isValidIdentity(account.identity))) {
-      setWatchError("INVALID IDENTITY IN LIST");
+      setWatchError("Invalid identity in list");
       return;
     }
 
@@ -192,138 +261,158 @@ export default function WelcomeScreen() {
     navigate("/dashboard", { replace: true });
   }
 
+  /* ---- render ---- */
+
   return (
     <FullPage>
-      <div style={{ width: "100%", maxWidth: 320, display: "flex", flexDirection: "column", gap: "var(--space-8)" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        style={{ width: "100%", maxWidth: 320, display: "flex", flexDirection: "column", gap: "var(--space-8)" }}
+      >
+        {/* Pending request warning */}
         {hasPendingRequest && (
           <div
             role="status"
             style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "var(--space-3)",
+              display: "flex", alignItems: "flex-start", gap: "var(--space-3)",
               padding: "var(--space-3) var(--space-4)",
-              background: "var(--color-bg-elevated)",
+              background: "var(--color-bg-surface)",
               border: "1px solid var(--color-status-warning)",
-              borderRadius: "var(--radius-sharp)",
+              borderRadius: "var(--radius-card)",
             }}
           >
             <DangerTriangle size={14} color="var(--color-status-warning)" weight="Linear" style={{ flexShrink: 0, marginTop: 2 }} />
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-status-warning)", letterSpacing: "0.05em", lineHeight: 1.5 }}>
-              A DAPP REQUEST IS WAITING. CREATE OR IMPORT A WALLET TO PROCEED.
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", color: "var(--color-status-warning)", lineHeight: 1.5 }}>
+              A dApp request is waiting. Create or import a wallet to proceed.
             </span>
           </div>
         )}
+
+        {/* Brand + tagline */}
         <div>
-          <div
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "var(--text-mono-sm)",
-              color: "var(--color-text-secondary)",
-              letterSpacing: "0.15em",
-              marginBottom: "var(--space-4)",
-            }}
-          >
-            GLYPH
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: "0.75rem", fontWeight: 500, color: "var(--color-text-disabled)", letterSpacing: "0.1em", marginBottom: "var(--space-4)" }}>
+            Glyph
           </div>
-          <div
-            style={{
-              fontFamily: "var(--font-sans)",
-              fontSize: "var(--text-headline)",
-              fontWeight: 500,
-              color: "var(--color-text-display)",
-            }}
-          >
-            Your keys.<br />Your Qubic.
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-headline)", fontWeight: 500, lineHeight: 1.25 }}>
+            <span style={{ color: "var(--color-text-display)" }}>Your keys.</span>
+            <br />
+            <span style={{ color: "var(--color-accent)" }}>Your Qubic.</span>
           </div>
         </div>
 
+        {/* Action buttons */}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-          <Button variant="primary" shape="pill" onClick={() => navigate("/setup/create")}>
+          <button type="button" onClick={() => navigate("/setup/create")} style={accentBtn}>
             Create wallet
-          </Button>
-          <Button variant="secondary" shape="sharp" onClick={() => navigate("/setup/import")}>
+          </button>
+          <button type="button" onClick={() => navigate("/setup/import")} style={secondaryBtn}>
             Import seed
-          </Button>
-          <Button variant="ghost" shape="sharp" onClick={() => setWatchOpen(true)}>
+          </button>
+          <button type="button" onClick={() => setWatchOpen(true)} style={ghostBtn}>
             Import watch-only
-          </Button>
-          <Button variant="ghost" shape="sharp" onClick={openFilePicker}>
+          </button>
+          <button type="button" onClick={openFilePicker} style={ghostBtn}>
             Import vault file
-          </Button>
+          </button>
         </div>
-      </div>
+      </motion.div>
 
+      {/* ---- Import vault file modal ---- */}
       <Modal open={!!importData} onClose={() => setImportData(null)}>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <div>
             <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: "var(--color-text-display)", marginBottom: "var(--space-1)" }}>
               Import {importData?.name}
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)" }}>
               {importData && importData.accounts.length > MAX_VAULT_ACCOUNTS
-                ? `${selectedIndices.size} / ${MAX_VAULT_ACCOUNTS} SELECTED`
-                : `${importData?.accounts.length ?? 0} ${(importData?.accounts.length ?? 0) === 1 ? "ACCOUNT" : "ACCOUNTS"}`}
+                ? `${selectedIndices.size} / ${MAX_VAULT_ACCOUNTS} selected`
+                : `${importData?.accounts.length ?? 0} ${(importData?.accounts.length ?? 0) === 1 ? "account" : "accounts"}`}
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: importData?.signatureVerified ? "var(--color-status-success)" : "var(--color-status-warning)", letterSpacing: "0.05em", marginTop: "var(--space-1)" }}>
-              {importData?.legacy ? "[LEGACY FORMAT V1 — IMPORT WITH CARE]" : importData?.signatureVerified ? "[SIGNED EXPORT V2 VERIFIED]" : "[SIGNED EXPORT V2 — SIGNATURE NOT VERIFIED ON THIS DEVICE]"}
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: importData?.signatureVerified ? "var(--color-status-success)" : "var(--color-status-warning)", marginTop: "var(--space-1)" }}>
+              {importData?.legacy
+                ? "Legacy format v1 — import with care"
+                : importData?.signatureVerified
+                  ? "Signed export v2 verified"
+                  : "Signed export v2 — signature not verified on this device"}
             </div>
           </div>
 
+          {/* Account selection list */}
           {importData && importData.accounts.length > MAX_VAULT_ACCOUNTS && (
-            <div style={{ maxHeight: 196, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-              {[...importData.accounts].sort((a, b) => a.index - b.index).map((account) => {
+            <div style={{ background: "var(--color-bg-surface)", borderRadius: "var(--radius-card)", padding: "var(--space-4)", maxHeight: 196, overflowY: "auto" }}>
+              {[...importData.accounts].sort((a, b) => a.index - b.index).map((account, i, arr) => {
                 const selected = selectedIndices.has(account.index);
                 const atLimit = !selected && selectedIndices.size >= MAX_VAULT_ACCOUNTS;
                 return (
-                  <button
-                    key={account.index}
-                    type="button"
-                    onClick={() => toggleAccount(account.index)}
-                    disabled={atLimit}
-                    style={{
-                      display: "flex", alignItems: "center", gap: "var(--space-3)",
-                      background: "none", border: "none", textAlign: "left",
-                      padding: "var(--space-2) 0", cursor: atLimit ? "not-allowed" : "pointer",
-                      opacity: atLimit ? 0.35 : 1,
-                    }}
-                  >
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", letterSpacing: "0.05em", flexShrink: 0, width: 14, color: selected ? "var(--color-text-display)" : "var(--color-text-disabled)" }}>
-                      {selected ? "✓" : "○"}
-                    </span>
-                    <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: selected ? "var(--color-text-display)" : "var(--color-text-secondary)" }}>
-                      {account.name}
-                    </span>
-                  </button>
+                  <Fragment key={account.index}>
+                    <button
+                      type="button"
+                      onClick={() => toggleAccount(account.index)}
+                      disabled={atLimit}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "var(--space-3)",
+                        background: "none", border: "none", textAlign: "left",
+                        padding: "11px 0", cursor: atLimit ? "not-allowed" : "pointer",
+                        opacity: atLimit ? 0.35 : 1, width: "100%",
+                      }}
+                    >
+                      <span style={{
+                        fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)",
+                        flexShrink: 0, width: 14,
+                        color: selected ? "var(--color-accent)" : "var(--color-text-disabled)",
+                      }}>
+                        {selected ? "✓" : "○"}
+                      </span>
+                      <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: selected ? "var(--color-text-display)" : "var(--color-text-secondary)" }}>
+                        {account.name}
+                      </span>
+                    </button>
+                    {i < arr.length - 1 && <div style={rowDivider} />}
+                  </Fragment>
                 );
               })}
             </div>
           )}
 
-          <Input
-            type="password"
-            label="Vault password"
-            value={importPw}
-            onChange={(e) => { setImportPw(e.target.value); setImportError(""); }}
-            onKeyDown={(e) => e.key === "Enter" && !importLoading && doImport()}
-            error={importError}
-            placeholder="••••••••••"
-            autoComplete="current-password"
-            autoFocus
-          />
-          <Button
+          {/* Password */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <label style={fieldLabel}>Vault password</label>
+            <input
+              type="password"
+              value={importPw}
+              onChange={(e) => { setImportPw(e.target.value); setImportError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && !importLoading && doImport()}
+              placeholder="••••••••••"
+              autoComplete="current-password"
+              autoFocus
+              style={inputField}
+            />
+            {importError && (
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-status-error)" }}>
+                {importError}
+              </span>
+            )}
+          </div>
+
+          {/* Actions */}
+          <button
+            type="button"
             onClick={doImport}
-            loading={importLoading}
-            disabled={!importPw || (importData !== null && importData.accounts.length > MAX_VAULT_ACCOUNTS && selectedIndices.size === 0)}
+            disabled={!importPw || importLoading || (importData !== null && importData.accounts.length > MAX_VAULT_ACCOUNTS && selectedIndices.size === 0)}
+            style={{ ...accentBtn, opacity: (!importPw || importLoading || (importData !== null && importData.accounts.length > MAX_VAULT_ACCOUNTS && selectedIndices.size === 0)) ? 0.4 : 1, cursor: (!importPw || importLoading) ? "not-allowed" : "pointer" }}
           >
-            Import vault
-          </Button>
-          <Button variant="ghost" shape="sharp" size="md" style={{ width: "auto", margin: "0 auto" }} onClick={() => setImportData(null)}>
+            {importLoading ? <Spinner /> : "Import vault"}
+          </button>
+          <button type="button" onClick={() => setImportData(null)} style={{ ...ghostBtn, margin: "0 auto" }}>
             Cancel
-          </Button>
+          </button>
         </div>
       </Modal>
 
+      {/* ---- Watch-only modal ---- */}
       <Modal open={watchOpen} onClose={() => setWatchOpen(false)}>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           <div>
@@ -334,45 +423,52 @@ export default function WelcomeScreen() {
               One identity per line. Optional label after a comma.
             </div>
           </div>
-          <Input
-            label="Vault name"
-            value={watchName}
-            onChange={(e) => { setWatchName(e.target.value); setWatchError(""); }}
-            placeholder="e.g. Treasury, Validators"
-            autoFocus
-          />
-          <label style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-            <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Identities
-            </span>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <label style={fieldLabel}>Vault name</label>
+            <input
+              value={watchName}
+              onChange={(e) => { setWatchName(e.target.value); setWatchError(""); }}
+              placeholder="e.g. Treasury, Validators"
+              autoFocus
+              style={inputField}
+            />
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+            <label style={fieldLabel}>Identities</label>
             <textarea
               value={watchInput}
               onChange={(e) => { setWatchInput(e.target.value); setWatchError(""); }}
               placeholder={"IDENTITYONE..., Main\nIDENTITYTWO..., Cold staking"}
               rows={6}
               style={{
-                width: "100%",
-                resize: "vertical",
-                background: "var(--color-bg-surface)",
+                width: "100%", resize: "vertical",
+                background: "transparent",
                 color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border-strong)",
-                borderRadius: "var(--radius-sharp)",
-                padding: "var(--space-3)",
+                border: "none",
+                borderBottom: "1px solid var(--color-border-strong)",
+                borderRadius: 0,
+                padding: "12px 0",
                 fontFamily: "var(--font-mono)",
                 fontSize: "var(--text-mono-sm)",
-                letterSpacing: "0.03em",
+                lineHeight: 1.6,
               }}
             />
-          </label>
+          </div>
+
           {watchError && (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-status-error)", letterSpacing: "0.05em" }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-status-error)" }}>
               {watchError}
-            </div>
+            </span>
           )}
-          <Button onClick={createWatchOnlyVault}>Create watch-only vault</Button>
-          <Button variant="ghost" shape="sharp" size="md" style={{ width: "auto", margin: "0 auto" }} onClick={() => setWatchOpen(false)}>
+
+          <button type="button" onClick={createWatchOnlyVault} style={accentBtn}>
+            Create watch-only vault
+          </button>
+          <button type="button" onClick={() => setWatchOpen(false)} style={{ ...ghostBtn, margin: "0 auto" }}>
             Cancel
-          </Button>
+          </button>
         </div>
       </Modal>
     </FullPage>

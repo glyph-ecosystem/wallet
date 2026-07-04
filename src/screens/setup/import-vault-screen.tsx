@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { FullPage } from "@/layouts/full-page";
-import { Button } from "@/components/button";
-import { Input } from "@/components/input";
 import { deriveIdentityFromSeed, toSeed, InvalidSeedError, newId } from "@/lib/crypto";
 import { unlockSecureSession } from "@/lib/secure-session";
 import { createVault } from "@/lib/vault";
@@ -25,16 +24,51 @@ const COLOR_CSS: Record<VaultColor, string> = {
 };
 
 function strengthOf(pw: string) {
-  if (pw.length < 10) return { label: "TOO SHORT", level: 0, color: "var(--color-status-error)" };
+  if (pw.length < 10) return { label: "Too short", level: 0, color: "var(--color-status-error)" };
   const score =
     (pw.length >= 14 ? 1 : 0) +
     (/[A-Z]/.test(pw) ? 1 : 0) +
     (/[0-9]/.test(pw) ? 1 : 0) +
     (/[^A-Za-z0-9]/.test(pw) ? 1 : 0);
-  if (score <= 1) return { label: "FAIR", level: 1, color: "var(--color-status-warning)" };
-  if (score <= 2) return { label: "GOOD", level: 2, color: "var(--color-status-success)" };
-  return { label: "STRONG", level: 3, color: "var(--color-status-success)" };
+  if (score <= 1) return { label: "Fair", level: 1, color: "var(--color-status-warning)" };
+  if (score <= 2) return { label: "Good", level: 2, color: "var(--color-status-success)" };
+  return { label: "Strong", level: 3, color: "var(--color-status-success)" };
 }
+
+const accentPill: React.CSSProperties = {
+  display: "flex", alignItems: "center", justifyContent: "center",
+  width: "100%", height: 48,
+  background: "var(--color-accent)", color: "#111",
+  borderRadius: 999, border: "none",
+  fontFamily: "var(--font-sans)", fontWeight: 500, fontSize: "0.875rem",
+  cursor: "pointer",
+};
+
+const ghostBtn: React.CSSProperties = {
+  background: "none", border: "none", cursor: "pointer",
+  fontFamily: "var(--font-sans)", fontSize: "0.8125rem",
+  color: "var(--color-text-disabled)", padding: "8px 0", alignSelf: "center",
+};
+
+const inputField: React.CSSProperties = {
+  background: "transparent", border: "none",
+  borderBottom: "1px solid var(--color-border-strong)",
+  borderRadius: 0, padding: "12px 0",
+  fontFamily: "var(--font-sans)", fontSize: "var(--text-body)",
+  color: "var(--color-text-display)", width: "100%", outline: "none",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontFamily: "var(--font-sans)", fontSize: "var(--text-label)",
+  fontWeight: 500, color: "var(--color-text-secondary)",
+};
+
+const stepMotion = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.15, ease: "easeOut" as const },
+};
 
 export default function ImportVaultScreen() {
   const navigate = useNavigate();
@@ -63,12 +97,12 @@ export default function ImportVaultScreen() {
       setSeedError("");
       setStep(2);
     } catch (e) {
-      setSeedError(e instanceof InvalidSeedError ? "55 LOWERCASE LETTERS REQUIRED" : "INVALID SEED");
+      setSeedError(e instanceof InvalidSeedError ? "55 lowercase letters required" : "Invalid seed");
     }
   }
 
   function goStep3() {
-    if (!name.trim()) { setNameError("NAME REQUIRED"); return; }
+    if (!name.trim()) { setNameError("Name required"); return; }
     setNameError("");
     setStep(3);
   }
@@ -107,16 +141,16 @@ export default function ImportVaultScreen() {
 
   return (
     <FullPage centered={false} style={{ justifyContent: "flex-start", paddingTop: "var(--space-8)" }}>
-      <div style={{ width: "100%", maxWidth: 320, margin: "0 auto" }}>
+      <div style={{ width: "100%", maxWidth: 320, margin: "0 auto", display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
         {/* Step progress bar */}
-        <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-8)" }}>
+        <div style={{ display: "flex", gap: "var(--space-2)" }}>
           {([1, 2, 3] as Step[]).map((s) => (
             <div
               key={s}
               style={{
-                flex: 1, height: 2,
-                background: step >= s ? "var(--color-text-display)" : "var(--color-border-strong)",
-                transition: `background var(--duration-base) var(--ease-out)`,
+                flex: 1, height: 2, borderRadius: 1,
+                background: step >= s ? "var(--color-accent)" : "var(--color-border-strong)",
+                transition: "background 0.2s ease",
               }}
             />
           ))}
@@ -124,112 +158,129 @@ export default function ImportVaultScreen() {
 
         {/* Step 1 — Enter seed */}
         {step === 1 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+          <motion.div {...stepMotion} style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
             <div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-headline)", fontWeight: 500, color: "var(--color-text-display)", marginBottom: "var(--space-2)" }}>
-                Import your seed.
+                Import your seed
               </div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--color-text-secondary)" }}>
                 55 lowercase letters. Never shared.
               </div>
             </div>
 
-            <Input
-              label="Seed phrase"
-              type="password"
-              value={seedInput}
-              onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(""); }}
-              onKeyDown={(e) => e.key === "Enter" && validateAndContinue()}
-              error={seedError}
-              placeholder="55 characters, lowercase"
-              autoFocus
-            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              <label style={labelStyle}>Seed phrase</label>
+              <input
+                type="password"
+                value={seedInput}
+                onChange={(e) => { setSeedInput(e.target.value); if (seedError) setSeedError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && validateAndContinue()}
+                placeholder="55 characters, lowercase"
+                autoFocus
+                style={inputField}
+              />
+              {seedError && (
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.75rem", color: "var(--color-status-error)" }}>{seedError}</span>
+              )}
+            </div>
 
-            <Button onClick={validateAndContinue}>Continue</Button>
-            <Button variant="ghost" size="md" shape="sharp" style={{ width: "auto", margin: "0 auto" }} onClick={() => navigate("/setup")}>
+            <button type="button" onClick={validateAndContinue} style={accentPill}>
+              Continue
+            </button>
+            <button type="button" onClick={() => navigate("/setup")} style={ghostBtn}>
               Back
-            </Button>
-          </div>
+            </button>
+          </motion.div>
         )}
 
         {/* Step 2 — Name + color */}
         {step === 2 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+          <motion.div {...stepMotion} style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
             <div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-headline)", fontWeight: 500, color: "var(--color-text-display)", marginBottom: "var(--space-2)" }}>
-                Name your vault.
+                Name your vault
               </div>
               {derivedIdentity && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>
-                    DERIVED ADDRESS
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em", wordBreak: "break-all" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.75rem", color: "var(--color-text-disabled)" }}>
+                    Derived address
+                  </span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", wordBreak: "break-all" }}>
                     {truncateId(derivedIdentity, 12, 12)}
-                  </div>
+                  </span>
                 </div>
               )}
             </div>
 
-            <Input
-              label="Vault name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && goStep3()}
-              error={nameError}
-              placeholder="e.g. Main, Trading, Cold"
-              autoFocus
-              style={{ fontFamily: "var(--font-sans)" }}
-            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              <label style={labelStyle}>Vault name</label>
+              <input
+                value={name}
+                onChange={(e) => { setName(e.target.value); setNameError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && goStep3()}
+                placeholder="e.g. Main, Trading, Cold"
+                autoFocus
+                style={inputField}
+              />
+              {nameError && (
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.75rem", color: "var(--color-status-error)" }}>{nameError}</span>
+              )}
+            </div>
 
             <div>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "var(--space-3)" }}>
-                Color
-              </div>
+              <div style={{ ...labelStyle, marginBottom: "var(--space-3)" }}>Color</div>
               <div style={{ display: "flex", gap: "var(--space-3)" }}>
                 {COLORS.map((c) => (
                   <button
                     key={c}
+                    type="button"
                     onClick={() => setColor(c)}
+                    aria-label={`Vault color: ${c}`}
+                    aria-pressed={color === c}
                     style={{
-                      width: 24, height: 24, borderRadius: "50%",
+                      width: 28, height: 28, borderRadius: "50%",
                       background: COLOR_CSS[c],
                       border: color === c ? "2px solid var(--color-text-display)" : "2px solid transparent",
                       cursor: "pointer", padding: 0,
+                      transition: "border-color 0.15s ease",
                     }}
                   />
                 ))}
               </div>
             </div>
 
-            <Button onClick={goStep3}>Continue</Button>
-          </div>
+            <button type="button" onClick={goStep3} style={accentPill}>
+              Continue
+            </button>
+          </motion.div>
         )}
 
         {/* Step 3 — Password */}
         {step === 3 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
+          <motion.div {...stepMotion} style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
             <div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-headline)", fontWeight: 500, color: "var(--color-text-display)", marginBottom: "var(--space-2)" }}>
-                Set a password.
+                Set a password
               </div>
               <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--color-text-secondary)" }}>
                 Minimum 10 characters. Never stored.
               </div>
             </div>
 
-            <div>
-              <Input
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !loading && strength.level >= 1 && finish()}
-                placeholder="••••••••••"
-                autoComplete="new-password"
-                autoFocus
-                containerStyle={{ marginBottom: "var(--space-3)" }}
-              />
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+                <label style={labelStyle}>Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !loading && strength.level >= 1 && finish()}
+                  placeholder="••••••••••"
+                  autoComplete="new-password"
+                  autoFocus
+                  style={inputField}
+                />
+              </div>
               {password.length > 0 && (
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
                   <div style={{ display: "flex", gap: 3, flex: 1 }}>
@@ -237,24 +288,26 @@ export default function ImportVaultScreen() {
                       <div
                         key={i}
                         style={{
-                          flex: 1, height: 2,
+                          flex: 1, height: 2, borderRadius: 1,
                           background: i <= strength.level ? strength.color : "var(--color-border-strong)",
-                          transition: `background var(--duration-fast) var(--ease-out)`,
+                          transition: "background 0.15s ease",
                         }}
                       />
                     ))}
                   </div>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: strength.color, letterSpacing: "0.05em" }}>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.75rem", fontWeight: 500, color: strength.color }}>
                     {strength.label}
                   </span>
                 </div>
               )}
             </div>
 
-            <Button onClick={finish} loading={loading} disabled={strength.level < 1}>
-              Import vault
-            </Button>
-          </div>
+            <button type="button" onClick={finish} disabled={loading || strength.level < 1} style={{ ...accentPill, opacity: loading || strength.level < 1 ? 0.4 : 1 }}>
+              {loading ? (
+                <span style={{ width: 16, height: 16, border: "2px solid #111", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+              ) : "Import vault"}
+            </button>
+          </motion.div>
         )}
       </div>
     </FullPage>
