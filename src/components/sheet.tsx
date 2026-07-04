@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
+import { useSheetRegister } from "@/layouts/sheet-state";
 
 export interface SheetProps {
   open: boolean;
@@ -14,6 +15,13 @@ const EASE_OUT = [0, 0, 0.2, 1] as const;
 
 export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const { onOpen, onClose: onSheetClose } = useSheetRegister();
+
+  useEffect(() => {
+    if (open) onOpen();
+    else onSheetClose();
+    return () => { if (open) onSheetClose(); };
+  }, [open, onOpen, onSheetClose]);
 
   useEffect(() => {
     if (!open) return;

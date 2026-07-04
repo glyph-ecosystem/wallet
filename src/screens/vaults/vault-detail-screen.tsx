@@ -4,8 +4,8 @@ import { AppShell } from "@/layouts/app-shell";
 import { ScreenHeader } from "@/components/screen-header";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
-import { Modal } from "@/components/modal";
 import { Sheet } from "@/components/sheet";
+import { Modal } from "@/components/modal";
 import { usePersistedStore, type AccountMeta } from "@/store/persisted";
 import { MAX_VAULT_ACCOUNTS } from "@/hooks/use-vault-balances";
 import { useSessionStore } from "@/store/session";
@@ -20,6 +20,10 @@ import { SEED_CLIPBOARD_CLEAR_SECS } from "@/lib/constants";
 import { getAccountIdentity, isWatchOnlyVault, parseAccountTags } from "@/lib/accounts";
 import { createSignedExportEnvelope } from "@/lib/export-format";
 import { recordAuditEvent } from "@/lib/audit-log";
+import {
+  Pen2, DocumentText, Key, EyeClosed, Eye, TrashBinMinimalistic,
+  AddCircle,
+} from "@solar-icons/react";
 
 const ACCOUNT_NAME_SUGGESTIONS = [
   "Main", "Trading", "Staking", "Cold Storage", "DeFi", "Savings",
@@ -402,7 +406,9 @@ export default function VaultDetailScreen() {
       onBack={() => navigate("/vaults")}
       action={
         currentVault.accounts.length < MAX_VAULT_ACCOUNTS
-          ? <button type="button" onClick={openAdd} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em", padding: 0 }}>+ ADD</button>
+          ? <button type="button" onClick={openAdd} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "var(--space-1)", fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-secondary)", letterSpacing: "0.05em", padding: 0 }}>
+              <AddCircle size={15} weight="Linear" />
+            </button>
           : <span style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-text-disabled)", letterSpacing: "0.05em" }}>16 MAX</span>
       }
     />
@@ -469,26 +475,18 @@ export default function VaultDetailScreen() {
         )}
       </div>
 
-      {/* Export modal */}
-      <Modal open={showExport} onClose={() => setShowExport(false)}>
+      <Sheet open={showExport} onClose={() => setShowExport(false)} title={`Export ${currentVault.name}`}>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: "var(--color-text-display)" }}>
-            Export {currentVault.name}
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-status-warning)", letterSpacing: "0.05em", lineHeight: 1.6 }}>
-            [WARNING] This file contains your encrypted seed. Keep it safe. Anyone with this file and your password can access your funds.
-          </div>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-status-warning)" }}>
+            This file contains your encrypted seed. Keep it safe. Anyone with this file and your password can access your funds.
+          </span>
           <Button onClick={doExport}>Download backup file</Button>
-          <Button variant="ghost" shape="sharp" size="md" style={{ width: "auto", margin: "0 auto" }} onClick={() => setShowExport(false)}>Cancel</Button>
         </div>
-      </Modal>
+      </Sheet>
 
-      {/* Add account modal */}
-      <Modal open={addingAccount} onClose={() => setAddingAccount(false)}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: "var(--color-text-display)" }}>
-            {watchOnly ? "Add watch-only account" : "Add account"}
-          </div>
+      {/* Add account sheet */}
+      <Sheet open={addingAccount} onClose={() => setAddingAccount(false)} title={watchOnly ? "Add watch-only account" : "Add account"}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           {!watchOnly && (
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
               {(["new", "import"] as const).map((mode, i) => (
@@ -557,7 +555,7 @@ export default function VaultDetailScreen() {
           <Button onClick={doAdd} loading={addLoading} disabled={!addName.trim() || (!watchOnly && !addPassword) || (!watchOnly && addMode === "import" && !addSeed.trim()) || (watchOnly && !addIdentity.trim())}>Add account</Button>
           <Button variant="ghost" shape="sharp" size="md" style={{ width: "auto", margin: "0 auto" }} onClick={() => setAddingAccount(false)}>Cancel</Button>
         </div>
-      </Modal>
+      </Sheet>
 
       {/* Rename modal */}
       <Modal open={!!renamingAccount} onClose={() => setRenamingAccount(null)}>
@@ -767,6 +765,7 @@ export default function VaultDetailScreen() {
             <ActionCard
               title="Rename"
               description="Change the label shown in the vault and account switcher."
+              icon={Pen2}
               onClick={() => {
                 setRenamingAccount(selectedAccount);
                 setRenameValue(selectedAccount.name);
@@ -776,6 +775,7 @@ export default function VaultDetailScreen() {
             <ActionCard
               title="Notes and tags"
               description="Add labels like staking, cold, or trading and keep a short note."
+              icon={DocumentText}
               onClick={() => {
                 setEditingMeta(selectedAccount);
                 setMetaNote(selectedAccount.note ?? "");
@@ -787,6 +787,7 @@ export default function VaultDetailScreen() {
               <ActionCard
                 title="Reveal seed"
                 description="Decrypt and display this account seed for a limited time."
+                icon={Key}
                 onClick={() => {
                   openReveal(selectedAccount);
                   closeAccountMenu();
@@ -796,6 +797,7 @@ export default function VaultDetailScreen() {
             <ActionCard
               title={selectedAccount.hidden ? "Unhide account" : "Hide account"}
               description={selectedAccount.hidden ? "Show this account in the switcher again." : "Remove this account from the switcher without deleting it."}
+              icon={selectedAccount.hidden ? Eye : EyeClosed}
               onClick={() => {
                 toggleHide(selectedAccount);
                 closeAccountMenu();
@@ -804,6 +806,7 @@ export default function VaultDetailScreen() {
             <ActionCard
               title="Remove account"
               description="Delete this account from the vault. This cannot be undone."
+              icon={TrashBinMinimalistic}
               danger
               onClick={() => {
                 setRemovingAccount(selectedAccount);
@@ -911,11 +914,13 @@ function AccountRow({ account, accentColor, identity, isCurrent, dimmed, onManag
 function ActionCard({
   title,
   description,
+  icon: Icon,
   danger,
   onClick,
 }: {
   title: string;
   description: string;
+  icon?: typeof Pen2;
   danger?: boolean;
   onClick: () => void;
 }) {
@@ -926,19 +931,21 @@ function ActionCard({
       style={{
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
-        gap: "var(--space-4)",
+        gap: "var(--space-3)",
         width: "100%",
         textAlign: "left",
         background: danger ? "color-mix(in srgb, var(--color-status-error) 8%, var(--color-bg-surface))" : "var(--color-bg-surface)",
         border: `1px solid ${danger ? "color-mix(in srgb, var(--color-status-error) 40%, var(--color-border-strong))" : "var(--color-border-strong)"}`,
         borderRadius: "var(--radius-sharp)",
         cursor: "pointer",
-        padding: "var(--space-4)",
+        padding: "var(--space-3) var(--space-4)",
       }}
     >
-      <div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: danger ? "var(--color-status-error)" : "var(--color-text-display)", marginBottom: "var(--space-1)" }}>
+      {Icon && (
+        <Icon size={18} weight="Linear" />
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: danger ? "var(--color-status-error)" : "var(--color-text-display)" }}>
           {title}
         </div>
         <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
