@@ -337,7 +337,7 @@ export default function LockScreen() {
             {hasMultiple && (
               <div style={{
                 display: "flex", flexDirection: "column", gap: "var(--space-2)",
-                maxHeight: 220, overflowY: "auto",
+                maxHeight: 220, overflowY: "auto", overflowX: "hidden",
                 scrollbarWidth: "thin",
               }}>
                 {lockedVaults.map((v) => (

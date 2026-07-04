@@ -13,6 +13,7 @@ import {
   Heart,
   Bug,
   InfoCircle,
+  LockKeyhole,
 } from "@solar-icons/react";
 import { AppShell } from "@/layouts/app-shell";
 import { useUpdater } from "@/hooks/use-updater";
@@ -203,10 +204,7 @@ export default function SettingsScreen() {
             cursor: "pointer",
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 40 40" fill="none">
-            <rect x="4" y="4" width="32" height="32" rx="8" stroke="var(--color-text-disabled)" strokeWidth="2" />
-            <path d="M14 14h12M14 20h12M14 26h8" stroke="var(--color-text-disabled)" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          <LockKeyhole size={16} weight="Linear" style={{ color: "var(--color-text-disabled)" }} />
           <span style={{
             fontFamily: "var(--font-sans)", fontSize: "var(--text-label)",
             fontWeight: 500, color: "var(--color-text-disabled)",
