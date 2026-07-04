@@ -345,4 +345,221 @@ Everything else: action menus, pickers, rename forms, import flows, seed reveal 
 - ❌ Error messages without actionable guidance
 - ❌ Toast notifications for form validation
 - ❌ Modal for anything a Sheet can handle
-- ❌ Text-transform: uppercase on any element
+- ❌ Text-transform: uppercase on any element (except currency codes)
+
+---
+
+## 13. Code Patterns
+
+### Inline Style Convention
+
+All styles are inline React `style` objects. No CSS modules, no styled-components, no Tailwind utility classes in components.
+
+```tsx
+// ✅ Correct: Design tokens via CSS variables
+<div style={{
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-body)",
+  color: "var(--color-text-secondary)",
+  padding: "var(--space-4)",
+}}>
+
+// ❌ Wrong: Hardcoded values
+<div style={{
+  fontFamily: "Geist, sans-serif",
+  fontSize: "15px",
+  color: "#a8a8ac",
+  padding: "16px",
+}}>
+```
+
+### Section Label Pattern
+
+Every section label (e.g., "Total balance", "Accounts", "Recent activity") uses this pattern:
+
+```tsx
+<span style={{
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-label)",
+  fontWeight: 500,
+  color: "var(--color-text-disabled)",
+  letterSpacing: "0.05em",
+}}>
+  Section name
+</span>
+```
+
+- Font: **sans** (never mono)
+- Case: **sentence case** (never uppercase)
+- Weight: 500
+- Color: `--color-text-disabled` (not secondary — disabled is dimmer)
+- No `textTransform: "uppercase"`
+
+### Data Display Pattern
+
+Addresses, amounts, hashes, tick numbers:
+
+```tsx
+<span style={{
+  fontFamily: "var(--font-mono)",
+  fontSize: "var(--text-mono-sm)",
+  color: "var(--color-text-secondary)",
+  letterSpacing: "0.04em",
+}}>
+  {data}
+</span>
+```
+
+### Status Badge Pattern
+
+```tsx
+<span style={{
+  fontFamily: "var(--font-sans)",
+  fontSize: "10px",
+  color: "var(--color-text-disabled)",
+  padding: "1px 6px",
+  border: "1px solid var(--color-border-strong)",
+  borderRadius: "var(--radius-pill)",
+  lineHeight: "16px",
+}}>
+  Watch
+</span>
+```
+
+### Empty State Pattern
+
+```tsx
+<div style={{
+  textAlign: "center",
+  padding: "var(--space-12) 0",
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-body)",
+  color: "var(--color-text-disabled)",
+}}>
+  No transactions yet
+</div>
+```
+
+- Font: **sans** (never mono)
+- Case: **sentence case**
+- No brackets (`[NO TRANSACTIONS]` → `No transactions yet`)
+
+### Error Message Pattern
+
+```tsx
+<span style={{
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-caption)",
+  color: "var(--color-status-error)",
+}}>
+  Wrong password — 3 attempts remaining
+</span>
+```
+
+- Font: **sans** (never mono)
+- Case: **sentence case**
+- Actionable: tell the user what to do
+
+### List Item Pattern
+
+```tsx
+<div style={{
+  display: "flex",
+  alignItems: "center",
+  gap: "var(--space-3)",
+  padding: "12px var(--space-4)",
+  borderRadius: "var(--radius-card)",
+}}>
+  <Identicon seed={seed} size={36} radius={8} style={{ flexShrink: 0 }} />
+  <div style={{ flex: 1, minWidth: 0 }}>
+    <span style={{ /* title: sans, 500, display color */ }}>{name}</span>
+    <span style={{ /* subtitle: sans, caption, disabled color */ }}>{info}</span>
+  </div>
+</div>
+```
+
+---
+
+## 14. Page Templates
+
+### Lock Screen (FullPage layout)
+
+```
+┌──────────────────────────┐
+│                          │
+│         GLYPH            │  ← Doto display font, centered
+│                          │
+│  [Identicon] Vault Name  │  ← Vault selector (if multiple)
+│                          │
+│  ┌────────────────────┐  │
+│  │ Password           │  │  ← Input, auto-focused
+│  └────────────────────┘  │
+│  [     Unlock      ]     │  ← Primary button, full width
+│                          │
+│  Use biometric           │  ← Ghost text button
+│  Last unlocked 2h ago    │  ← Caption
+└──────────────────────────┘
+```
+
+### Dashboard (AppShell layout)
+
+```
+┌──────────────────────────┐
+│ ← back     Title    [+]  │  ← Screen header
+├──────────────────────────┤
+│                          │
+│  Account Name     ▼      │  ← Account selector
+│  1,234,567 QU            │  ← Hero balance (Doto)
+│  ≈ $12,345 USD           │  ← Subtitle (mono)
+│                          │
+│  [Send] [Receive] [...]  │  ← Action buttons row
+│                          │
+│  ─── Recent ───────────  │
+│  [Identicon] Name   100  │  ← Activity items
+│              2h ago  QU  │
+│                          │
+│        ╭─────────╮       │
+│        │ Nav Bar │       │  ← Floating bottom nav
+│        ╰─────────╯       │
+└──────────────────────────┘
+```
+
+### Settings Sub-Screen (AppShell layout)
+
+```
+┌──────────────────────────┐
+│ ← back     Title         │  ← Screen header
+├──────────────────────────┤
+│                          │
+│  Section Label           │  ← Sans, label size, disabled
+│  ┌────────────────────┐  │
+│  │ Setting      [toggle]│  │  ← ToggleRow component
+│  └────────────────────┘  │
+│  ┌────────────────────┐  │
+│  │ Setting      value ▸│  │  ← Clickable row
+│  └────────────────────┘  │
+│                          │
+└──────────────────────────┘
+```
+
+---
+
+## 15. Audit Checklist
+
+Before shipping any screen, verify:
+
+- [ ] No `textTransform: "uppercase"` except currency codes
+- [ ] No `fontFamily: "var(--font-mono)"` on labels, descriptions, or section headers
+- [ ] All Modals replaced with Sheets (except delete confirmations)
+- [ ] No hardcoded colors (use `var(--color-*)`)
+- [ ] No hardcoded font sizes (use `var(--text-*)`)
+- [ ] No hardcoded spacing (use `var(--space-*)`)
+- [ ] No hardcoded radius (use `var(--radius-*)`)
+- [ ] Error messages in sans font, sentence case, actionable
+- [ ] Empty states in sans font, sentence case
+- [ ] Buttons use sentence case
+- [ ] Section labels use sans font, sentence case, disabled color
+- [ ] Bottom padding accounts for floating nav (76px)
+- [ ] Identicons used for all identity visualization
+- [ ] Sheet uses `title` prop (not manual title div)
+- [ ] Sheet removes redundant close/cancel buttons (Sheet has built-in close)
