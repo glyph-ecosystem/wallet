@@ -82,6 +82,10 @@ const title = p.get('title') || '';
 const body = p.get('body') || '';
 const duration = parseInt(p.get('duration') || '5000', 10);
 
+console.log('[notif] location.href:', location.href);
+console.log('[notif] location.search:', location.search);
+console.log('[notif] parsed:', { kind, title, body, duration });
+
 const COLORS = {
   received: '#4ade80', sent: '#60a5fa', confirmed: '#ccfcfb',
   failed: '#f87171', expired: '#fbbf24', deep_link: '#60a5fa', price_alert: '#c084fc',
