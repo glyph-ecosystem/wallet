@@ -33,7 +33,6 @@ pub fn show_notification_window(app: tauri::AppHandle, payload: NotificationPayl
 
     let duration = payload.duration.unwrap_or(5000);
 
-    // Data as URL search params — the HTML page reads location.search directly
     let qs = format!(
         "kind={}&title={}&body={}&duration={}",
         pct_encode(&payload.kind),
@@ -42,17 +41,19 @@ pub fn show_notification_window(app: tauri::AppHandle, payload: NotificationPayl
         duration,
     );
 
-    // Load the standalone notification.html — no React, no router
     let webview_url = if let Some(dev_url) = app.config().build.dev_url.clone() {
         let mut url = dev_url.to_string().trim_end_matches('/').to_string();
         url.push_str("/notification.html?");
         url.push_str(&qs);
-        WebviewUrl::External(url.parse().map_err(|e: url::ParseError| e.to_string())?)
+        let parsed: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
+        eprintln!("[notif] dev url: {parsed}");
+        WebviewUrl::External(parsed)
     } else {
-        WebviewUrl::App(format!("notification.html?{qs}").into())
+        let path = format!("notification.html?{qs}");
+        eprintln!("[notif] app path: {path}");
+        WebviewUrl::App(path.into())
     };
 
-    // Bottom-right of primary monitor, above the taskbar
     let (x, y) = if let Some(window) = app.get_webview_window("main") {
         if let Ok(Some(monitor)) = window.primary_monitor() {
             let pos = monitor.position();
@@ -62,13 +63,19 @@ pub fn show_notification_window(app: tauri::AppHandle, payload: NotificationPayl
             let margin_bottom = 56.0;
             let sx = (pos.x as f64) + (size.width as f64) / scale - 376.0 - margin_right;
             let sy = (pos.y as f64) + (size.height as f64) / scale - 100.0 - margin_bottom;
+            eprintln!("[notif] monitor pos=({},{}) size={}x{} scale={scale} -> window=({sx:.0},{sy:.0})",
+                pos.x, pos.y, size.width, size.height);
             (sx, sy)
         } else {
+            eprintln!("[notif] no primary monitor, using fallback (100,100)");
             (100.0, 100.0)
         }
     } else {
+        eprintln!("[notif] no main window, using fallback (100,100)");
         (100.0, 100.0)
     };
+
+    eprintln!("[notif] creating window '{label}' at ({x:.0},{y:.0}), size 376x100, duration {duration}ms");
 
     let notif_app = app.clone();
     let close_label = label.clone();
@@ -84,16 +91,31 @@ pub fn show_notification_window(app: tauri::AppHandle, payload: NotificationPayl
         .resizable(false)
         .skip_taskbar(true)
         .visible(true)
-        .focused(false)
+        .focused(true)
+        .devtools(true)
         .background_color(tauri::window::Color(15, 15, 15, 255))
         .build()
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            eprintln!("[notif] FAILED to build window: {e}");
+            e.to_string()
+        })?;
+
+    eprintln!("[notif] window '{label}' created successfully");
 
     // Auto-close after duration
+    let destroy_label = close_label.clone();
     std::thread::spawn(move || {
+        eprintln!("[notif] auto-close thread started for '{destroy_label}', sleeping {duration}ms");
         std::thread::sleep(std::time::Duration::from_millis(duration));
-        if let Some(w) = notif_app.get_webview_window(&close_label) {
-            let _ = w.destroy();
+        match notif_app.get_webview_window(&destroy_label) {
+            Some(w) => {
+                eprintln!("[notif] destroying window '{destroy_label}'");
+                let _ = w.destroy();
+                eprintln!("[notif] window '{destroy_label}' destroyed");
+            }
+            None => {
+                eprintln!("[notif] window '{destroy_label}' not found for destroy (already closed?)");
+            }
         }
     });
 
