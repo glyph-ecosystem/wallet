@@ -9,7 +9,6 @@ pub struct NotificationPayload {
     pub duration: Option<u64>,
 }
 
-/// Full notification HTML served by the custom protocol handler.
 fn build_html(kind: &str, title: &str, body: &str, duration: u64) -> String {
     let colors = [
         ("received", "#4ade80"), ("sent", "#60a5fa"), ("confirmed", "#ccfcfb"),
@@ -53,39 +52,13 @@ html,body{{background:transparent;height:100%;overflow:hidden;font-family:-apple
 </style></head><body><div class="c" id="c"><div class="b"></div><div class="i"><svg viewBox="0 0 24 24" fill="none">{icon_svg}</svg></div><div class="t"><h>{title}</h><b>{body}</b></div><button class="x" id="x"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><div class="p" style="background:{color}"></div></div><script>function close(){{document.getElementById("c").classList.add("out");setTimeout((function(){{try{{window.close()}}catch(e)}}),200)}}document.getElementById("c").onclick=close;document.getElementById("x").onclick=function(e){{e.stopPropagation();close()}};setTimeout(close,{duration})</script></body></html>"##)
 }
 
-pub fn handle_notif_protocol<R: tauri::Runtime>(
-    _ctx: tauri::UriSchemeContext<'_, R>,
-    request: http::Request<Vec<u8>>,
-) -> http::Response<Vec<u8>> {
-    eprintln!("[notif] PROTOCOL HANDLER FIRED! uri={}", request.uri());
-
-    let params: std::collections::HashMap<String, String> =
-        url::Url::parse(&request.uri().to_string()).ok()
-            .map(|u| u.query_pairs().into_owned().collect())
-            .unwrap_or_default();
-
-    let kind = params.get("kind").cloned().unwrap_or_default();
-    let title = params.get("title").cloned().unwrap_or_default();
-    let body = params.get("body").cloned().unwrap_or_default();
-    let duration = params.get("duration").and_then(|d| d.parse::<u64>().ok()).unwrap_or(5000);
-
-    let html = build_html(&kind, &title, &body, duration);
-    let bytes = html.into_bytes();
-    eprintln!("[notif] responding with {} bytes", bytes.len());
-
-    http::Response::builder()
-        .status(200)
-        .header("Content-Type", "text/html; charset=utf-8")
-        .body(bytes)
-        .unwrap()
-}
-
 #[tauri::command]
 pub fn show_notification_window(app: tauri::AppHandle, payload: NotificationPayload) -> Result<(), String> {
-    let label = format!("notif-{}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis());
     let duration = payload.duration.unwrap_or(5000);
 
+    let html = build_html(&payload.kind, &payload.title, &payload.body, duration);
+
+    // Calculate position on main thread where monitor info is available
     let (x, y) = if let Some(w) = app.get_webview_window("main") {
         if let Ok(Some(m)) = w.primary_monitor() {
             let (px, py, sw, sh, sc) = (m.position().x as f64, m.position().y as f64,
@@ -94,41 +67,74 @@ pub fn show_notification_window(app: tauri::AppHandle, payload: NotificationPayl
         } else { (100.0, 100.0) }
     } else { (100.0, 100.0) };
 
-    let url = format!("notif://localhost/?kind={}&title={}&body={}&duration={}",
-        urlencoding::encode(&payload.kind),
-        urlencoding::encode(&payload.title),
-        urlencoding::encode(&payload.body),
-        duration,
-    );
-    eprintln!("[notif] label={label}");
-    eprintln!("[notif] url={url}");
-    eprintln!("[notif] building at ({x:.0},{y:.0})");
+    // WebView2 requires window creation on the main thread.
+    // IPC commands run on a separate thread, causing build() to hang.
+    // Use run_on_main_thread to create the window on the event loop thread.
+    // Build eval JS to inject the HTML
+    let escaped = html.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n").replace('\r', "");
+    let eval_js = format!(r#"document.open();document.write("{}");document.close();"#, escaped);
 
-    WebviewWindowBuilder::new(&app, &label, WebviewUrl::CustomProtocol(url.parse().map_err(|e: url::ParseError| e.to_string())?))
-        .inner_size(376.0, 100.0)
-        .position(x, y)
-        .decorations(false)
-        .always_on_top(true)
-        .resizable(false)
-        .skip_taskbar(true)
-        .visible(true)
-        .focused(false)
-        .background_color(tauri::window::Color(15, 15, 15, 255))
-        .initialization_script("console.log('[notif] init_script ran'); document.title='NOTIF_READY';")
-        .build()
-        .map_err(|e| { eprintln!("[notif] build failed: {e}"); e.to_string() })?;
-
-    eprintln!("[notif] built OK");
-
-    // Auto-close safety net
     let app2 = app.clone();
-    let l2 = label.clone();
-    std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_millis(duration + 3000));
-        if let Some(w) = app2.get_webview_window(&l2) {
-            let _ = w.destroy();
-        }
-    });
+    app.run_on_main_thread(move || {
+        let label = format!("notif-{}", std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis());
+
+        let url = match "http://localhost:1420/".parse::<url::Url>() {
+            Ok(u) => u,
+            Err(e) => { eprintln!("[notif] url parse err: {e}"); return; }
+        };
+
+        eprintln!("[notif] building window on main thread...");
+
+        let _window = match WebviewWindowBuilder::new(&app2, &label, WebviewUrl::External(url))
+            .inner_size(376.0, 100.0)
+            .position(x, y)
+            .decorations(false)
+            .always_on_top(true)
+            .resizable(false)
+            .skip_taskbar(true)
+            .visible(false)
+            .focused(false)
+            .background_color(tauri::window::Color(15, 15, 15, 255))
+            .build()
+        {
+            Ok(w) => {
+                eprintln!("[notif] window built OK");
+                w
+            }
+            Err(e) => {
+                eprintln!("[notif] build failed: {e}");
+                return;
+            }
+        };
+
+        // Inject notification HTML via eval after the page loads.
+        let app3 = app2.clone();
+        let l2 = label.clone();
+        let js = eval_js.clone();
+        std::thread::spawn(move || {
+            // Wait for the page to load
+            std::thread::sleep(std::time::Duration::from_millis(1500));
+            if let Some(w) = app3.get_webview_window(&l2) {
+                match w.eval(&js) {
+                    Ok(_) => eprintln!("[notif] eval OK"),
+                    Err(e) => eprintln!("[notif] eval err: {e}"),
+                }
+                let _ = w.show();
+            }
+        });
+
+        // Auto-close
+        let app4 = app2.clone();
+        let l3 = label.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(duration + 3000));
+            if let Some(w) = app4.get_webview_window(&l3) {
+                let _ = w.destroy();
+            }
+        });
+    }).map_err(|e| e.to_string())?;
 
     Ok(())
 }
+
