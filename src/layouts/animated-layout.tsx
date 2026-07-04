@@ -5,6 +5,7 @@ import { useAutoLock } from "@/hooks/use-auto-lock";
 import { useLockCountdown } from "@/hooks/use-lock-countdown";
 import { BottomNav, type BottomNavTab } from "@/components/bottom-nav";
 import { HeaderSlotProvider, useHeaderSlot } from "./header-slot";
+import { SheetStateProvider, useSheetsOpen } from "./sheet-state";
 
 // ── Route helpers ────────────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ function LayoutShell() {
   const cur = location.pathname;
   const show = showChrome(cur);
   const showNav = show && !HIDDEN_NAV_ROUTES.has(cur);
+  const sheetsOpen = useSheetsOpen();
 
   const prevRef = useRef(cur);
   useLayoutEffect(() => { prevRef.current = cur; }, [cur]);
@@ -112,7 +114,7 @@ function LayoutShell() {
       </div>
 
       {/* ── Floating bottom nav ── */}
-      {showNav && (
+      {showNav && !sheetsOpen && (
         <nav
           style={{
             position: "absolute",
@@ -135,8 +137,10 @@ export function AnimatedLayout() {
   useAutoLock();
 
   return (
-    <HeaderSlotProvider>
-      <LayoutShell />
-    </HeaderSlotProvider>
+    <SheetStateProvider>
+      <HeaderSlotProvider>
+        <LayoutShell />
+      </HeaderSlotProvider>
+    </SheetStateProvider>
   );
 }
