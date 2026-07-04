@@ -6,6 +6,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import { Sheet } from "@/components/sheet";
+import { Identicon } from "@/components/identicon";
 import { usePersistedStore, type VaultMeta, type VaultColor, type AccountMeta } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
 import { unlockSecureSession } from "@/lib/secure-session";
@@ -14,15 +15,6 @@ import { isValidIdentity, newId } from "@/lib/crypto";
 import { isWatchOnlyVault, parseAccountTags } from "@/lib/accounts";
 import { parseSignedExportEnvelope } from "@/lib/export-format";
 import { recordAuditEvent } from "@/lib/audit-log";
-
-const VAULT_COLOR: Record<string, string> = {
-  slate: "var(--color-vault-slate)",
-  red: "var(--color-vault-red)",
-  amber: "var(--color-vault-amber)",
-  emerald: "var(--color-vault-emerald)",
-  sky: "var(--color-vault-sky)",
-  violet: "var(--color-vault-violet)",
-};
 
 function timeAgo(ms: number): string {
   if (!ms) return "Never";
@@ -339,7 +331,6 @@ export default function VaultsScreen() {
         const isActive = vault.id === settings.activeVaultId;
         const watchOnly = isWatchOnlyVault(vault);
         const visibleCount = vault.accounts.filter((a) => !a.hidden).length;
-        const color = VAULT_COLOR[vault.color] ?? "var(--color-text-secondary)";
 
         return (
           <div
@@ -362,10 +353,7 @@ export default function VaultsScreen() {
                 flex: 1, minWidth: 0, textAlign: "left", padding: 0,
               }}
             >
-              <div style={{
-                width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
-                background: color,
-              }} />
+              <Identicon seed={`${vault.id}:${vault.color}`} size={36} radius={8} style={{ flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
                   <span style={{

@@ -13,6 +13,7 @@ import { FullPage } from "@/layouts/full-page";
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import { Sheet } from "@/components/sheet";
+import { Identicon } from "@/components/identicon";
 import type { Seed } from "@/lib/crypto";
 import { isWatchOnlyVault } from "@/lib/accounts";
 import { recordAuditEvent } from "@/lib/audit-log";
@@ -360,7 +361,6 @@ export default function LockScreen() {
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
           {lockedVaults.map((v) => {
             const isActive = v.id === selectedId;
-            const color = VAULT_COLOR[v.color] ?? "var(--color-text-secondary)";
             return (
               <button
                 key={v.id}
@@ -375,10 +375,7 @@ export default function LockScreen() {
                   textAlign: "left",
                 }}
               >
-                <div style={{
-                  width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
-                  background: color,
-                }} />
+                <Identicon seed={`${v.id}:${v.color}`} size={32} radius={6} style={{ flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                   <span style={{
                     fontFamily: "var(--font-sans)", fontSize: "var(--text-body)",
