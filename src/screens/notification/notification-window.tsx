@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { invoke } from "@tauri-apps/api/core";
 import { CheckCircle, ArrowUp, ShieldCheck, DangerCircle, ClockCircle, BoltCircle, LinkCircle, CloseCircle } from "@solar-icons/react";
 
 type NotifKind = "received" | "sent" | "confirmed" | "failed" | "expired" | "deep_link" | "price_alert";
@@ -21,30 +22,16 @@ const KIND_CONFIG: Record<NotifKind, { color: string; icon: typeof CheckCircle }
   price_alert: { color: "#c084fc", icon: BoltCircle },
 };
 
-function parseParams(): NotifData | null {
-  try {
-    // App uses createHashRouter — query params live in the hash fragment
-    // e.g. index.html#/notification?data=eyJraW5k...
-    const hash = window.location.hash;
-    const qIndex = hash.indexOf("?");
-    if (qIndex === -1) return null;
-    const params = new URLSearchParams(hash.slice(qIndex));
-    const raw = params.get("data");
-    if (!raw) return null;
-    // data is URL-safe base64-encoded JSON
-    const json = atob(raw.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(json) as NotifData;
-  } catch {
-    return null;
-  }
-}
-
 export default function NotificationWindow() {
   const [data, setData] = useState<NotifData | null>(null);
   const [exiting, setExiting] = useState(false);
 
+  // Fetch notification data from Rust via the window label
   useEffect(() => {
-    setData(parseParams());
+    const win = getCurrentWebviewWindow();
+    invoke<NotifData | null>("take_notification_data", { label: win.label })
+      .then((d) => { if (d) setData(d); })
+      .catch(() => {});
   }, []);
 
   const close = useCallback(async () => {
