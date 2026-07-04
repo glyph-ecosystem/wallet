@@ -27,8 +27,8 @@ export function Identicon({ seed, size = 32, radius = 4, padding = 2, style }: I
   const colorHash = fnv1a(seed + "\x00");
 
   const hue = colorHash % 360;
-  const fg = `hsl(${hue}, 65%, 58%)`;
-  const bg = `hsl(${hue}, 22%, 11%)`;
+  const fg = `hsl(${hue}, 60%, 55%)`;
+  const bg = `hsl(${hue}, 30%, 18%)`;
 
   const inner = size - padding * 2;
   const cs = inner / 5; // cell size
@@ -43,16 +43,18 @@ export function Identicon({ seed, size = 32, radius = 4, padding = 2, style }: I
   }
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      style={{ borderRadius: radius, flexShrink: 0, ...style }}
-    >
-      <rect width={size} height={size} fill={bg} rx={radius} />
-      {cells.map(({ x, y }, i) => (
-        <rect key={i} x={x} y={y} width={cs} height={cs} fill={fg} />
-      ))}
-    </svg>
+    <div style={{ width: size, height: size, borderRadius: radius, overflow: "hidden", flexShrink: 0, ...style }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ display: "block" }}
+      >
+        <rect width={size} height={size} fill={bg} />
+        {cells.map(({ x, y }, i) => (
+          <rect key={i} x={x} y={y} width={cs} height={cs} fill={fg} />
+        ))}
+      </svg>
+    </div>
   );
 }
