@@ -12,11 +12,14 @@ export function extractMessage(e: unknown, fallback = "An error occurred."): str
   return fallback;
 }
 
-/** Format a QU amount (bigint, string, or number) with locale-aware thousand separators. */
+/** Format a QU amount (bigint, string, or number) with comma-separated thousands. */
 export function formatQu(amount: bigint | string | number): string {
   try {
     const n = typeof amount === "number" ? BigInt(Math.round(amount)) : BigInt(amount);
-    return n.toLocaleString();
+    const sign = n < 0n ? "-" : "";
+    const abs = n < 0n ? (-n).toString() : n.toString();
+    const withCommas = abs.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return sign + withCommas;
   } catch { return "—"; }
 }
 
