@@ -1,5 +1,4 @@
 import { isValidIdentity } from "@/lib/crypto";
-import sponsorNames from "../../sponsor-names.json";
 
 export interface Sponsor {
   identity: string;
@@ -28,4 +27,4 @@ if (!isValidIdentity(DONATION_IDENTITY)) {
   throw new Error(`[glyph] DONATION_IDENTITY is not a valid Qubic address: ${DONATION_IDENTITY}`);
 }
 
-export const SPONSOR_NAMES = sponsorNames as Record<string, string>;
+export const SPONSOR_NAMES: Record<string, string> = {};

@@ -215,7 +215,8 @@ export default function VaultDetailScreen() {
       });
       if (isActive) {
         const allSeeds = await unlockVault(newEncrypted, addPassword);
-        sessionUnlock(currentVault.id, unlockSecureSession(allSeeds));
+        const wallets = await unlockSecureSession(allSeeds);
+        sessionUnlock(currentVault.id, wallets);
       }
       setNewlyAddedIndex(newIndex);
       setAddingAccount(false);
@@ -298,7 +299,8 @@ export default function VaultDetailScreen() {
       updateVault(currentVault.id, { encryptedData: newEncrypted, accounts: updatedAccounts });
       if (isActive) {
         const remaining = await unlockVault(newEncrypted, removePassword);
-        sessionUnlock(currentVault.id, unlockSecureSession(remaining));
+        const wallets = await unlockSecureSession(remaining);
+        sessionUnlock(currentVault.id, wallets);
         const activeIdx = settings.activeAccountIndex;
         if (removingAccount.index === activeIdx) {
           setActiveAccountIndex(0);
@@ -325,7 +327,7 @@ export default function VaultDetailScreen() {
       const newEncrypted = await createVault(rotateNewPassword, seeds);
       updateVault(currentVault.id, { encryptedData: newEncrypted });
       if (isActive) {
-        const wallets = unlockSecureSession(seeds);
+        const wallets = await unlockSecureSession(seeds);
         sessionUnlock(currentVault.id, wallets);
       }
       setRotateDone(true);
@@ -363,10 +365,13 @@ export default function VaultDetailScreen() {
           return;
         }
         const { invoke } = await import("@tauri-apps/api/core");
-        seeds = (await invoke<string[]>("biometric_unlock", {
+        const seed = await invoke<string>("reveal_seed_with_biometric", {
           vaultId: currentVault.id,
           vaultData: currentVault.encryptedData!,
-        })).map(toSeed);
+          accountIndex: revealingAccount.index,
+        });
+        seeds = [];
+        seeds[revealingAccount.index] = toSeed(seed);
       } else {
         seeds = await unlockVault(currentVault.encryptedData!, revealPassword);
       }
