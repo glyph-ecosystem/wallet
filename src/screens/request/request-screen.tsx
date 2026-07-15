@@ -17,31 +17,15 @@ import { usePersistedStore } from "@/store/persisted";
 import { ScreenHeader } from "@/components/screen-header";
 import { recordAuditEvent } from "@/lib/audit-log";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { parseGlyphEnvelope, REQUEST_TYPE_LABEL, type GlyphCallbackResponse } from "@/lib/request-schema";
-
-type CallbackStatus = "pending" | "ok" | "failed";
-
-interface SuccessState {
-  kind: "tx" | "message" | "verify" | "connect";
-  detail: string; // tx hash, base64 signature, "VALID"/"INVALID", or identity
-  hasCallback: boolean;
-  callbackStatus: CallbackStatus;
-  callbackBody: string;
-  callbackUrl: string | null;
-  requestHistoryId: string | null;
-}
-
-function makeRequestHistoryId() {
-  return `req_${crypto.randomUUID()}`;
-}
-
-function getAccountNameForIdentity(historyVaults: ReturnType<typeof usePersistedStore.getState>["vaults"], identity: string) {
-  for (const vault of historyVaults) {
-    const account = vault.accounts.find((candidate) => candidate.identity === identity);
-    if (account) return account.name;
-  }
-  return undefined;
-}
+import { parseGlyphEnvelope, REQUEST_TYPE_LABEL } from "@/lib/request-schema";
+import {
+  approveRequest,
+  deliverRequestResult,
+  makeRequestHistoryId,
+  rejectRequest,
+  type RequestOrchestrationDeps,
+  type RequestSuccessState,
+} from "@/lib/request-orchestration";
 
 export default function RequestScreen() {
   const navigate = useNavigate();
@@ -56,7 +40,7 @@ export default function RequestScreen() {
   const parseResult = parseGlyphEnvelope(pendingRequest);
   const envelope = parseResult.envelope;
   const parseError = parseResult.error;
-  const [success, setSuccess] = useState<SuccessState | null>(null);
+  const [success, setSuccess] = useState<RequestSuccessState | null>(null);
   const [expirySecsLeft, setExpirySecsLeft] = useState<number | null>(null);
   const expiryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -95,320 +79,64 @@ export default function RequestScreen() {
     shiftPendingRequest();
   }
 
-  function reject() {
+  const orchestrationDeps: RequestOrchestrationDeps = {
+    now: Date.now,
+    makeRequestHistoryId,
+    postCallback: (url, body) => invoke("post_callback", { url, body }),
+    openUrl,
+    addRequestHistoryItem,
+    updateRequestHistoryItem,
+    recordAuditEvent,
+  };
+
+  async function reject() {
     if (envelope) {
-      const requestHistoryId = makeRequestHistoryId();
-      const response: GlyphCallbackResponse = {
-        status: "rejected",
-        nonce: envelope.request.nonce,
-        type: envelope.request.type,
-        reason: "user_rejected",
-      };
-      const body = JSON.stringify(response);
-      addRequestHistoryItem({
-        id: requestHistoryId,
-        createdAt: Date.now(),
-        type: envelope.request.type,
-        dappName: envelope.request.dapp.name || "Unknown dApp",
-        dappOrigin: envelope.request.dapp.origin,
-        action: "rejected",
-        callbackStatus: envelope.callback ? "pending" : "none",
-        callbackUrl: envelope.callback,
-        callbackBody: body,
-        callbackUpdatedAt: envelope.callback ? Date.now() : null,
-      });
-      recordAuditEvent({
-        kind: "request_rejected",
-        status: "info",
-        title: "Request rejected",
-        detail: `${envelope.request.type} from ${envelope.request.dapp.origin}`,
-      });
-      if (envelope.callback) {
-        const callbackUrl = envelope.callback;
-        invoke("post_callback", { url: callbackUrl, body })
-          .then(() => {
-            updateRequestHistoryItem(requestHistoryId, {
-              callbackStatus: "ok",
-              callbackUpdatedAt: Date.now(),
-            });
-          })
-          .catch(() => {
-            updateRequestHistoryItem(requestHistoryId, {
-              callbackStatus: "failed",
-              callbackUpdatedAt: Date.now(),
-            });
-            recordAuditEvent({
-              kind: "request_callback_failed",
-              status: "failure",
-              title: "Callback failed",
-              detail: callbackUrl,
-            });
-          });
-      }
-      if (envelope.redirect_uri) {
-        const encoded = btoa(body).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-        openUrl(`${envelope.redirect_uri}?result=${encoded}`).catch(() => {});
-      }
+      void rejectRequest(orchestrationDeps, envelope);
     }
     shiftPendingRequest();
   }
 
-  async function deliverResult(
-    callbackBody: string,
-    callbackUrl: string | null,
-    redirectUri: string | null,
-    requestHistoryId: string | null,
-  ) {
-    // POST callback (server-side delivery)
-    if (callbackUrl) {
-      try {
-        await invoke("post_callback", { url: callbackUrl, body: callbackBody });
-        if (requestHistoryId) {
-          updateRequestHistoryItem(requestHistoryId, {
-            callbackStatus: "ok",
-            callbackUpdatedAt: Date.now(),
-          });
-        }
-        setSuccess((s) => s ? { ...s, callbackStatus: "ok" } : s);
-      } catch {
-        if (requestHistoryId) {
-          updateRequestHistoryItem(requestHistoryId, {
-            callbackStatus: "failed",
-            callbackUpdatedAt: Date.now(),
-          });
-        }
-        recordAuditEvent({
-          kind: "request_callback_failed",
-          status: "failure",
-          title: "Callback failed",
-          detail: callbackUrl,
-        });
-        setSuccess((s) => s ? { ...s, callbackStatus: "failed" } : s);
-      }
-    } else {
-      setSuccess((s) => s ? { ...s, callbackStatus: "ok" } : s);
-    }
-
-    // Redirect URI (client-side delivery) — open browser with result in query param
-    if (redirectUri) {
-      const encoded = btoa(callbackBody).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-      await openUrl(`${redirectUri}?result=${encoded}`).catch(() => {});
-    }
+  async function handleApprove(result: ApproveResult) {
+    if (!envelope) return;
+    shiftPendingRequest();
+    const state = await approveRequest(orchestrationDeps, { envelope, approval: { kind: "tx", approve: result }, vaults });
+    setSuccess(state);
   }
 
-  async function handleApprove({ txHash, targetTick, identity }: ApproveResult) {
+  async function handleApproveMessage(result: SignMessageApproveResult) {
     if (!envelope) return;
-    const requestHistoryId = makeRequestHistoryId();
-    const callbackUrl = envelope.callback;
-    const redirectUri = envelope.redirect_uri ?? null;
-
-    const response: GlyphCallbackResponse = {
-      status: "signed",
-      type: envelope.request.type as "transfer" | "sc_call",
-      nonce: envelope.request.nonce,
-      identity,
-      tx_hash: txHash,
-      target_tick: targetTick,
-    };
-    const callbackBody = JSON.stringify(response);
-
     shiftPendingRequest();
-    recordAuditEvent({
-      kind: "request_approved",
-      status: "success",
-      title: "Request approved",
-      detail: `${envelope.request.type} from ${envelope.request.dapp.origin}`,
-    });
-    addRequestHistoryItem({
-      id: requestHistoryId,
-      createdAt: Date.now(),
-      type: envelope.request.type,
-      dappName: envelope.request.dapp.name || "Unknown dApp",
-      dappOrigin: envelope.request.dapp.origin,
-      action: "approved",
-      accountIdentity: identity,
-      accountName: getAccountNameForIdentity(vaults, identity),
-      resultKind: "tx",
-      resultDetail: txHash,
-      callbackStatus: callbackUrl ? "pending" : "none",
-      callbackUrl,
-      callbackBody,
-      callbackUpdatedAt: callbackUrl ? Date.now() : null,
-    });
-    const state: SuccessState = {
-      kind: "tx",
-      detail: txHash,
-      hasCallback: !!callbackUrl,
-      callbackStatus: "pending",
-      callbackBody,
-      callbackUrl,
-      requestHistoryId,
-    };
+    const state = await approveRequest(orchestrationDeps, { envelope, approval: { kind: "message", approve: result }, vaults });
     setSuccess(state);
-    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
   }
 
-  async function handleApproveMessage({ signature, publicKey, identity }: SignMessageApproveResult) {
+  async function handleApproveVerify(result: VerifyMessageResult) {
     if (!envelope) return;
-    const requestHistoryId = makeRequestHistoryId();
-    const callbackUrl = envelope.callback;
-    const redirectUri = envelope.redirect_uri ?? null;
-
-    const response: GlyphCallbackResponse = {
-      status: "signed",
-      type: "sign_message",
-      nonce: envelope.request.nonce,
-      identity,
-      signature,
-      public_key: publicKey,
-    };
-    const callbackBody = JSON.stringify(response);
-
     shiftPendingRequest();
-    recordAuditEvent({
-      kind: "request_approved",
-      status: "success",
-      title: "Message signed",
-      detail: envelope.request.dapp.origin,
-    });
-    addRequestHistoryItem({
-      id: requestHistoryId,
-      createdAt: Date.now(),
-      type: envelope.request.type,
-      dappName: envelope.request.dapp.name || "Unknown dApp",
-      dappOrigin: envelope.request.dapp.origin,
-      action: "approved",
-      accountIdentity: identity,
-      accountName: getAccountNameForIdentity(vaults, identity),
-      resultKind: "message",
-      resultDetail: signature,
-      callbackStatus: callbackUrl ? "pending" : "none",
-      callbackUrl,
-      callbackBody,
-      callbackUpdatedAt: callbackUrl ? Date.now() : null,
-    });
-    const state: SuccessState = {
-      kind: "message",
-      detail: signature,
-      hasCallback: !!callbackUrl,
-      callbackStatus: "pending",
-      callbackBody,
-      callbackUrl,
-      requestHistoryId,
-    };
+    const state = await approveRequest(orchestrationDeps, { envelope, approval: { kind: "verify", approve: result }, vaults });
     setSuccess(state);
-    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
   }
 
-  async function handleApproveVerify({ valid, identity }: VerifyMessageResult) {
+  async function handleApproveConnect(result: ConnectApproveResult) {
     if (!envelope) return;
-    const requestHistoryId = makeRequestHistoryId();
-    const callbackUrl = envelope.callback;
-    const redirectUri = envelope.redirect_uri ?? null;
-
-    const response: GlyphCallbackResponse = {
-      status: "verified",
-      type: "verify_message",
-      nonce: envelope.request.nonce,
-      valid,
-      identity,
-    };
-    const callbackBody = JSON.stringify(response);
-
     shiftPendingRequest();
-    recordAuditEvent({
-      kind: "request_approved",
-      status: "success",
-      title: "Signature verified",
-      detail: envelope.request.dapp.origin,
-    });
-    addRequestHistoryItem({
-      id: requestHistoryId,
-      createdAt: Date.now(),
-      type: envelope.request.type,
-      dappName: envelope.request.dapp.name || "Unknown dApp",
-      dappOrigin: envelope.request.dapp.origin,
-      action: "approved",
-      accountIdentity: identity,
-      accountName: getAccountNameForIdentity(vaults, identity),
-      resultKind: "verify",
-      resultDetail: valid ? "VALID" : "INVALID",
-      callbackStatus: callbackUrl ? "pending" : "none",
-      callbackUrl,
-      callbackBody,
-      callbackUpdatedAt: callbackUrl ? Date.now() : null,
-    });
-    const state: SuccessState = {
-      kind: "verify",
-      detail: valid ? "VALID" : "INVALID",
-      hasCallback: !!callbackUrl,
-      callbackStatus: "pending",
-      callbackBody,
-      callbackUrl,
-      requestHistoryId,
-    };
+    const state = await approveRequest(orchestrationDeps, { envelope, approval: { kind: "connect", approve: result }, vaults });
     setSuccess(state);
-    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
-  }
-
-  async function handleApproveConnect({ identity, permissions }: ConnectApproveResult) {
-    if (!envelope) return;
-    const requestHistoryId = makeRequestHistoryId();
-    const callbackUrl = envelope.callback;
-    const redirectUri = envelope.redirect_uri ?? null;
-
-    const response: GlyphCallbackResponse = {
-      status: "connected",
-      type: "connect",
-      nonce: envelope.request.nonce,
-      identity,
-      permissions,
-    };
-    const callbackBody = JSON.stringify(response);
-
-    shiftPendingRequest();
-    recordAuditEvent({
-      kind: "request_approved",
-      status: "success",
-      title: "Connection approved",
-      detail: envelope.request.dapp.origin,
-    });
-    addRequestHistoryItem({
-      id: requestHistoryId,
-      createdAt: Date.now(),
-      type: envelope.request.type,
-      dappName: envelope.request.dapp.name || "Unknown dApp",
-      dappOrigin: envelope.request.dapp.origin,
-      action: "approved",
-      accountIdentity: identity,
-      accountName: getAccountNameForIdentity(vaults, identity),
-      resultKind: "connect",
-      resultDetail: identity,
-      callbackStatus: callbackUrl ? "pending" : "none",
-      callbackUrl,
-      callbackBody,
-      callbackUpdatedAt: callbackUrl ? Date.now() : null,
-    });
-    const state: SuccessState = {
-      kind: "connect",
-      detail: identity,
-      hasCallback: !!callbackUrl,
-      callbackStatus: "pending",
-      callbackBody,
-      callbackUrl,
-      requestHistoryId,
-    };
-    setSuccess(state);
-    await deliverResult(callbackBody, callbackUrl, redirectUri, requestHistoryId);
   }
 
   async function retryCallbackFromSuccess() {
     if (!success?.callbackUrl) return;
     setSuccess((current) => current ? { ...current, callbackStatus: "pending" } : current);
-    await deliverResult(success.callbackBody, success.callbackUrl, null, success.requestHistoryId);
+    const callbackStatus = await deliverRequestResult(orchestrationDeps, {
+      callbackBody: success.callbackBody,
+      callbackUrl: success.callbackUrl,
+      redirectUri: null,
+      requestHistoryId: success.requestHistoryId,
+    });
+    setSuccess((current) => current ? { ...current, callbackStatus } : current);
   }
 
-  async function saveResult(successState: SuccessState) {
+  async function saveResult(successState: RequestSuccessState) {
     await saveFileDialog(`glyph-request-result-${Date.now()}.json`, successState.callbackBody);
   }
 
