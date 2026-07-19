@@ -8,6 +8,7 @@ import { buildPayload, type PayloadField } from "@qubic.org/tx";
 import type { Identity } from "@qubic.org/types";
 import { AppShell } from "@/layouts/app-shell";
 import { Button } from "@/components/button";
+import { DetailRow } from "@/components/detail-row";
 import { AddressSuggestions } from "@/components/address-suggestions";
 import { TxMemoField } from "@/components/tx-memo-field";
 import { Sheet } from "@/components/sheet";
@@ -52,25 +53,6 @@ const labelStyle: React.CSSProperties = {
   color: "var(--color-text-secondary)",
 };
 
-
-function DetailRow({ icon, label, value, valueColor, mono: useMono = true }: {
-  icon: React.ReactNode; label: string; value: string; valueColor?: string; mono?: boolean;
-}) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", padding: "11px 0" }}>
-      <span style={{ flexShrink: 0, color: "var(--color-text-disabled)" }}>{icon}</span>
-      <span style={{ ...labelStyle, flex: 1 }}>{label}</span>
-      <span style={{
-        fontFamily: useMono ? "var(--font-mono)" : "var(--font-sans)",
-        fontSize: "var(--text-label)", fontWeight: useMono ? 400 : 500,
-        color: valueColor ?? "var(--color-text-display)",
-        textAlign: "right", maxWidth: "55%", wordBreak: "break-all",
-      }}>
-        {value}
-      </span>
-    </div>
-  );
-}
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
