@@ -602,7 +602,7 @@ export default function StakeScreen() {
                         }}
                       >
                         <LockUnlocked size={16} weight="Bold" />
-                        Unlock all {readyPositions.length}
+                        {readyPositions.length === 1 ? "Review unlock" : "Review next unlock"}
                       </button>
                     </>
                   )}
