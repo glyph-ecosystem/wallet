@@ -55,6 +55,7 @@ export function ContactPicker({ open, onClose, onSelect, contacts, accounts = []
     <Sheet open={open} onClose={handleClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
         <input
+          aria-label="Search contacts and accounts"
           autoFocus
           autoComplete="off"
           value={search}
@@ -123,6 +124,7 @@ function PickerSection({
       {entries.map((entry) => (
         <button
           key={entry.key}
+          type="button"
           onClick={() => onSelect(entry.identity)}
           style={{
             display: "flex",

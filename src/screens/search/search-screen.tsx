@@ -72,7 +72,7 @@ export default function SearchScreen() {
   const txQueries = useQueries({
     queries: accountEntries.map((account) => ({
       queryKey: ["search-history", account.identity],
-      enabled: !!account.identity,
+      enabled: !!normalizedQuery && !!account.identity,
       staleTime: 60_000,
       queryFn: async () => {
         const result = await getRpcClient().archive.getTransactionsForIdentity({
@@ -194,6 +194,7 @@ export default function SearchScreen() {
       <div style={{ position: "relative" }}>
         <Magnifier size={18} weight="Linear" style={{ position: "absolute", left: "var(--space-3)", top: "50%", transform: "translateY(-50%)", color: "var(--color-text-disabled)", pointerEvents: "none", zIndex: 1 }} />
         <Input
+          aria-label="Search wallet"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search contacts, accounts, transactions, contracts"
