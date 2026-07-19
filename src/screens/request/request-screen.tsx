@@ -35,6 +35,7 @@ export default function RequestScreen() {
   const pendingRequestCount = useSessionStore((s) => s.pendingRequests.length);
   const shiftPendingRequest = useSessionStore((s) => s.shiftPendingRequest);
   const vaults = usePersistedStore((s) => s.vaults);
+  const approveDapp = usePersistedStore((s) => s.approveDapp);
   const addRequestHistoryItem = usePersistedStore((s) => s.addRequestHistoryItem);
   const updateRequestHistoryItem = usePersistedStore((s) => s.updateRequestHistoryItem);
 
@@ -138,6 +139,13 @@ export default function RequestScreen() {
     if (!envelope) return;
     shiftPendingRequest();
     const state = await approveRequest(orchestrationDeps, { envelope, approval: { kind: "connect", approve: result }, vaults });
+    approveDapp({
+      origin: envelope.request.dapp.origin,
+      name: envelope.request.dapp.name || "Unknown dApp",
+      approvedAt: Date.now(),
+      permissions: result.permissions,
+      allowedIdentities: [result.identity],
+    });
     setSuccess(state);
   }
 

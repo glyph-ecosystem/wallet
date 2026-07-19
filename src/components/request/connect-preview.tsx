@@ -57,7 +57,7 @@ export function ConnectPreview({ request, onApprove, onReject }: ConnectPreviewP
       </div>
 
       <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--text-mono-sm)", color: "var(--color-status-warning)", letterSpacing: "0.05em" }}>
-        [THIS REQUEST IS UNVERIFIED. GLYPH DOES NOT PERSIST TRUST FOR DEEP-LINK SENDERS.]
+        [GLYPH STORES THIS CONNECTION FOR REVIEW AND REVOCATION. EVERY REQUEST STILL REQUIRES YOUR APPROVAL.]
       </div>
 
       {/* Account picker */}
