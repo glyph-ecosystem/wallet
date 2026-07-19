@@ -865,7 +865,6 @@ function AccountRow({ account, identity, isCurrent, dimmed, flashSuccess, balanc
         opacity: dimmed ? 0.55 : 1,
         background: hovered ? "var(--color-bg-elevated)" : "var(--color-bg-surface)",
         border: "1px solid var(--color-border-strong)",
-        borderLeft: "3px solid var(--color-border-subtle)",
         borderRadius: "var(--radius-sharp)",
         padding: "var(--space-3)",
         display: "flex",

@@ -342,7 +342,6 @@ export default function VaultsScreen() {
               background: isActive ? "var(--color-bg-elevated)" : "transparent",
               borderRadius: "var(--radius-card)",
               border: `1px solid ${isActive ? "var(--color-border-strong)" : "transparent"}`,
-              borderLeft: "3px solid var(--color-border-subtle)",
               boxShadow: isActive ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
               transition: "background 0.12s, border-color 0.12s, box-shadow 0.12s",
             }}
