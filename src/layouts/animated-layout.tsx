@@ -133,17 +133,19 @@ function LayoutShell() {
 
       {/* ── Floating bottom nav ── */}
       {showNav && !sheetsOpen && (
-        <nav
+        <div
           style={{
             position: "absolute",
             bottom: 16,
-            left: "50%",
-            transform: "translateX(-50%)",
+            left: 16,
+            right: 16,
             zIndex: 100,
+            display: "flex",
+            justifyContent: "center",
           }}
         >
           <BottomNav active={activeTabFromPath(cur)} />
-        </nav>
+        </div>
       )}
     </div>
   );
