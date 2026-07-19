@@ -73,20 +73,22 @@ export default function NetworkScreen() {
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
           <SectionLabel>RPC endpoints</SectionLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-            <span style={labelStyle}>Live API</span>
-            <input value={liveUrl} onChange={(e) => { setLiveUrl(e.target.value); setTestStatus("idle"); setTestError(""); }} placeholder="https://rpc.qubic.org/live/v1" style={inputStyle} />
+            <label htmlFor="live-api-url" style={labelStyle}>Live API</label>
+            <input id="live-api-url" type="url" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby="rpc-endpoint-help" value={liveUrl} onChange={(e) => { setLiveUrl(e.target.value); setTestStatus("idle"); setTestError(""); }} placeholder="https://rpc.qubic.org/live/v1" style={inputStyle} />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-            <span style={labelStyle}>Archive API</span>
-            <input value={queryUrl} onChange={(e) => { setQueryUrl(e.target.value); setTestStatus("idle"); setTestError(""); }} placeholder="https://rpc.qubic.org/query/v1" style={inputStyle} />
+            <label htmlFor="archive-api-url" style={labelStyle}>Archive API</label>
+            <input id="archive-api-url" type="url" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby="rpc-endpoint-help" value={queryUrl} onChange={(e) => { setQueryUrl(e.target.value); setTestStatus("idle"); setTestError(""); }} placeholder="https://rpc.qubic.org/query/v1" style={inputStyle} />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
             <motion.button
               {...gesture.press}
+              type="button"
               onClick={testAndSave}
               disabled={!liveUrl.trim() || !queryUrl.trim() || testStatus === "testing"}
+              aria-busy={testStatus === "testing"}
               style={{
-                padding: "var(--space-2) var(--space-4)", background: "var(--color-accent)",
+                minHeight: 44, padding: "var(--space-2) var(--space-4)", background: "var(--color-accent)",
                 border: "none", borderRadius: "var(--radius-sharp)", cursor: "pointer",
                 fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", fontWeight: 500,
                 color: "var(--color-bg-base)", opacity: testStatus === "testing" ? 0.6 : 1,
@@ -94,25 +96,25 @@ export default function NetworkScreen() {
             >
               {testStatus === "testing" ? "Testing..." : "Test & save"}
             </motion.button>
-            <motion.button {...gesture.pressSubtle} onClick={resetToDefaults} style={{
+            <motion.button type="button" {...gesture.pressSubtle} onClick={resetToDefaults} style={{
               background: "none", border: "none", cursor: "pointer",
               fontFamily: "var(--font-sans)", fontSize: "var(--text-label)",
-              color: "var(--color-text-disabled)", padding: 0,
+              color: "var(--color-text-disabled)", minHeight: 44, padding: "0 var(--space-2)",
             }}>
               Reset
             </motion.button>
             {testStatus === "ok" && testTick !== null && (
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-status-success)" }}>
+              <span role="status" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-status-success)" }}>
                 Tick #{testTick}
               </span>
             )}
             {testStatus === "error" && (
-              <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-status-error)" }}>
+              <span role="alert" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-status-error)" }}>
                 {testError || "Unreachable"}
               </span>
             )}
           </div>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-text-disabled)" }}>
+          <span id="rpc-endpoint-help" style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-text-disabled)" }}>
             Custom endpoints must use HTTPS
           </span>
         </div>
@@ -161,7 +163,7 @@ const inputStyle: React.CSSProperties = {
   background: "transparent", border: "none",
   borderBottom: "1px solid var(--color-border-subtle)",
   padding: "var(--space-2) 0", fontFamily: "var(--font-sans)",
-  fontSize: "var(--text-body)", color: "var(--color-text-primary)", outline: "none", width: "100%",
+  fontSize: "var(--text-body)", color: "var(--color-text-primary)", width: "100%",
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
