@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { stepMotion, gesture } from "@/lib/animations";
 import { AppShell } from "@/layouts/app-shell";
 import { SettingsPageHeader } from "@/components/settings-page-header";
+import { SettingsSwitch } from "@/components/settings-switch";
 import { usePersistedStore } from "@/store/persisted";
 import { unlockVault } from "@/lib/vault";
 import { extractMessage } from "@/lib/format";
@@ -116,9 +117,9 @@ export default function SecurityScreen() {
 
         {/* Lock toggles */}
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          <Toggle label="Lock on sleep" description="Lock when the screen locks or machine sleeps" enabled={lockOnSleep} onToggle={() => updateSettings({ lockOnSleep: !lockOnSleep })} />
+          <SettingsSwitch label="Lock on sleep" description="Lock when the screen locks or machine sleeps" checked={lockOnSleep} onChange={() => updateSettings({ lockOnSleep: !lockOnSleep })} />
           <Divider />
-          <Toggle label="Lock on window blur" description="Lock when the app loses focus" enabled={lockOnWindowBlur} onToggle={() => updateSettings({ lockOnWindowBlur: !lockOnWindowBlur })} />
+          <SettingsSwitch label="Lock on window blur" description="Lock when the app loses focus" checked={lockOnWindowBlur} onChange={() => updateSettings({ lockOnWindowBlur: !lockOnWindowBlur })} />
         </div>
 
         {/* Divider */}
@@ -165,9 +166,9 @@ export default function SecurityScreen() {
 
         {/* Approval toggles */}
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          <Toggle label="Password for burn" description="Require password before burning QU" enabled={requirePasswordForBurn} onToggle={() => updateSettings({ requirePasswordForBurn: !requirePasswordForBurn })} />
+          <SettingsSwitch label="Password for burn" description="Require password before burning QU" checked={requirePasswordForBurn} onChange={() => updateSettings({ requirePasswordForBurn: !requirePasswordForBurn })} />
           <Divider />
-          <Toggle label="Biometric for seed reveal" description={isLinux ? "Require quick unlock to view seed" : "Require biometric to view seed"} enabled={requireBiometricForSeedReveal} onToggle={() => updateSettings({ requireBiometricForSeedReveal: !requireBiometricForSeedReveal })} />
+          <SettingsSwitch label="Biometric for seed reveal" description={isLinux ? "Require quick unlock to view seed" : "Require biometric to view seed"} checked={requireBiometricForSeedReveal} onChange={() => updateSettings({ requireBiometricForSeedReveal: !requireBiometricForSeedReveal })} />
         </div>
 
         {/* Biometric setup — only card, only when relevant */}
@@ -274,44 +275,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     }}>
       {children}
     </span>
-  );
-}
-
-function Toggle({ label, description, enabled, onToggle }: {
-  label: string; description: string; enabled: boolean; onToggle: () => void;
-}) {
-  return (
-    <button
-      onClick={onToggle}
-      style={{
-        display: "flex", alignItems: "center", gap: "var(--space-3)",
-        padding: "var(--space-3) 0", width: "100%", background: "none",
-        border: "none", cursor: "pointer", textAlign: "left",
-      }}
-    >
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: "var(--color-text-primary)" }}>
-          {label}
-        </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-text-secondary)", marginTop: 2 }}>
-          {description}
-        </div>
-      </div>
-      <div style={{
-        width: 36, height: 20, borderRadius: "var(--radius-pill)", flexShrink: 0, position: "relative",
-        background: enabled ? "var(--color-accent)" : "var(--color-border-strong)",
-      }}>
-        <motion.div
-          animate={{ x: enabled ? 18 : 2 }}
-          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          style={{
-            width: 16, height: 16, borderRadius: "50%",
-            background: enabled ? "var(--color-bg-base)" : "var(--color-text-disabled)",
-            position: "absolute", top: 2,
-          }}
-        />
-      </div>
-    </button>
   );
 }
 
