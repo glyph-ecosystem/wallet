@@ -6,18 +6,19 @@ import { HomeSmile, CardSend, CardReceive, MoneyBag, ClockCircle, Settings } fro
 export type BottomNavTab = "home" | "send" | "receive" | "earn" | "history" | "settings";
 
 const TABS = [
-  { id: "home" as BottomNavTab,     icon: HomeSmile,     path: "/dashboard" },
-  { id: "send" as BottomNavTab,     icon: CardSend,      path: "/send" },
-  { id: "receive" as BottomNavTab,  icon: CardReceive,   path: "/receive" },
-  { id: "earn" as BottomNavTab,     icon: MoneyBag,      path: "/earn" },
-  { id: "history" as BottomNavTab,  icon: ClockCircle,   path: "/history" },
-  { id: "settings" as BottomNavTab, icon: Settings,      path: "/settings" },
+  { id: "home" as BottomNavTab,     label: "Home",     icon: HomeSmile,     path: "/dashboard" },
+  { id: "send" as BottomNavTab,     label: "Send",     icon: CardSend,      path: "/send" },
+  { id: "receive" as BottomNavTab,  label: "Receive",  icon: CardReceive,   path: "/receive" },
+  { id: "earn" as BottomNavTab,     label: "Earn",     icon: MoneyBag,      path: "/earn" },
+  { id: "history" as BottomNavTab,  label: "History",  icon: ClockCircle,   path: "/history" },
+  { id: "settings" as BottomNavTab, label: "Settings", icon: Settings,      path: "/settings" },
 ];
 
 export function BottomNav({ active }: { active: BottomNavTab }) {
   const navigate = useNavigate();
   return (
-    <div
+    <nav
+      aria-label="Primary"
       style={{
         display: "flex",
         alignItems: "center",
@@ -30,12 +31,14 @@ export function BottomNav({ active }: { active: BottomNavTab }) {
         border: "1px solid rgba(255, 255, 255, 0.08)",
       }}
     >
-      {TABS.map(({ id, icon: Icon, path }) => {
+      {TABS.map(({ id, label, icon: Icon, path }) => {
         const isActive = id === active;
         return (
           <button
             key={id}
+            type="button"
             onClick={() => { if (!isActive) navigate(path); }}
+            aria-label={label}
             aria-current={isActive ? "page" : undefined}
             style={{
               position: "relative",
@@ -75,6 +78,6 @@ export function BottomNav({ active }: { active: BottomNavTab }) {
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }

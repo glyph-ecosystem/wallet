@@ -13,17 +13,18 @@ export function SettingsPageHeader({ title, backTo = "/settings" }: { title: str
       <button
         type="button"
         onClick={() => navigate(backTo)}
-        style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}
+        aria-label={backTo === "/settings" ? "Back to settings" : "Go back"}
+        style={{ width: 44, height: 44, background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         <AltArrowLeft size={20} style={{ color: "var(--color-text-primary)" }} />
       </button>
-      <span style={{
+      <h1 style={{
         position: "absolute", left: "50%", transform: "translateX(-50%)",
         fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500,
-        color: "var(--color-text-display)", whiteSpace: "nowrap",
+        color: "var(--color-text-display)", whiteSpace: "nowrap", margin: 0,
       }}>
         {title}
-      </span>
+      </h1>
     </div>
   );
 }
