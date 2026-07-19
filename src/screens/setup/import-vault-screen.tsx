@@ -13,6 +13,8 @@ import type { Seed } from "@/lib/crypto";
 import {
   AltArrowLeft,
   AltArrowRight,
+  Eye,
+  EyeClosed,
   LockKeyhole,
 } from "@solar-icons/react";
 
@@ -66,6 +68,7 @@ export default function ImportVaultScreen() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordsVisible, setPasswordsVisible] = useState(false);
   const [seedError, setSeedError] = useState("");
   const [nameError, setNameError] = useState("");
   const [setupError, setSetupError] = useState("");
@@ -242,7 +245,7 @@ export default function ImportVaultScreen() {
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
                 <label style={labelStyle}>Password</label>
                 <input
-                  type="password"
+                  type={passwordsVisible ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !loading && canSubmit && finish()}
@@ -258,7 +261,7 @@ export default function ImportVaultScreen() {
               <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
                 <label style={labelStyle}>Confirm password</label>
                 <input
-                  type="password"
+                  type={passwordsVisible ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !loading && canSubmit && finish()}
@@ -277,6 +280,16 @@ export default function ImportVaultScreen() {
                   </span>
                 )}
               </div>
+              <motion.button
+                type="button"
+                onClick={() => setPasswordsVisible((visible) => !visible)}
+                aria-pressed={passwordsVisible}
+                {...gesture.pressSubtle}
+                style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", alignSelf: "flex-start", minHeight: 44, padding: "var(--space-2) 0", background: "none", border: "none", color: "var(--color-text-secondary)", fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", cursor: "pointer" }}
+              >
+                {passwordsVisible ? <EyeClosed size={16} weight="Outline" /> : <Eye size={16} weight="Outline" />}
+                {passwordsVisible ? "Hide passwords" : "Show passwords"}
+              </motion.button>
               {password.length > 0 && (
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
                   <div style={{ display: "flex", gap: "var(--space-1)", flex: 1 }}>
