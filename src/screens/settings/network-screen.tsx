@@ -4,6 +4,7 @@ import { stepMotion, gesture } from "@/lib/animations";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppShell } from "@/layouts/app-shell";
 import { SettingsPageHeader } from "@/components/settings-page-header";
+import { SettingsSectionLabel, SettingsDivider } from "@/components/settings-section-elements";
 import { usePersistedStore } from "@/store/persisted";
 import { createQubicClient, configureRpc, normalizeRpcUrl } from "@/lib/rpc";
 
@@ -71,7 +72,7 @@ export default function NetworkScreen() {
 
         {/* RPC endpoints */}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-          <SectionLabel>RPC endpoints</SectionLabel>
+          <SettingsSectionLabel>RPC endpoints</SettingsSectionLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
             <label htmlFor="live-api-url" style={labelStyle}>Live API</label>
             <input id="live-api-url" type="url" inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby="rpc-endpoint-help" value={liveUrl} onChange={(e) => { setLiveUrl(e.target.value); setTestStatus("idle"); setTestError(""); }} placeholder="https://rpc.qubic.org/live/v1" style={inputStyle} />
@@ -120,12 +121,12 @@ export default function NetworkScreen() {
         </div>
 
         {/* Divider */}
-        <div style={{ height: 1, background: "var(--color-border-subtle)" }} />
+        <SettingsDivider />
 
         {/* Tick offset */}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
           <div>
-            <SectionLabel>Transaction tick offset</SectionLabel>
+            <SettingsSectionLabel>Transaction tick offset</SettingsSectionLabel>
             <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)", color: "var(--color-text-secondary)" }}>
               Target tick = current + offset. Higher values give more time to confirm.
             </span>
@@ -165,15 +166,3 @@ const inputStyle: React.CSSProperties = {
   padding: "var(--space-2) 0", fontFamily: "var(--font-sans)",
   fontSize: "var(--text-body)", color: "var(--color-text-primary)", width: "100%",
 };
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{
-      fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)",
-      fontWeight: 600, color: "var(--color-text-disabled)",
-      textTransform: "none", letterSpacing: "0.06em",
-    }}>
-      {children}
-    </span>
-  );
-}

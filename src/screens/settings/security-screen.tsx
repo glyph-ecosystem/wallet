@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { stepMotion, gesture } from "@/lib/animations";
 import { AppShell } from "@/layouts/app-shell";
 import { SettingsPageHeader } from "@/components/settings-page-header";
+import { SettingsSectionLabel, SettingsDivider } from "@/components/settings-section-elements";
 import { SettingsSwitch } from "@/components/settings-switch";
 import { usePersistedStore } from "@/store/persisted";
 import { unlockVault } from "@/lib/vault";
@@ -81,7 +82,7 @@ export default function SecurityScreen() {
 
         {/* Auto-lock */}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-          <SectionLabel>Auto-lock timeout</SectionLabel>
+          <SettingsSectionLabel>Auto-lock timeout</SettingsSectionLabel>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
             {TIMEOUT_OPTIONS.map((opt) => {
               const isActive = opt.value === autoLockMinutes;
@@ -118,16 +119,16 @@ export default function SecurityScreen() {
         {/* Lock toggles */}
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           <SettingsSwitch label="Lock on sleep" description="Lock when the screen locks or machine sleeps" checked={lockOnSleep} onChange={() => updateSettings({ lockOnSleep: !lockOnSleep })} />
-          <Divider />
+          <SettingsDivider />
           <SettingsSwitch label="Lock on window blur" description="Lock when the app loses focus" checked={lockOnWindowBlur} onChange={() => updateSettings({ lockOnWindowBlur: !lockOnWindowBlur })} />
         </div>
 
         {/* Divider */}
-        <div style={{ height: 1, background: "var(--color-border-subtle)" }} />
+        <SettingsDivider />
 
         {/* Clipboard */}
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-          <SectionLabel>Clear clipboard after</SectionLabel>
+          <SettingsSectionLabel>Clear clipboard after</SettingsSectionLabel>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
             {CLIPBOARD_OPTIONS.map((opt) => {
               const isActive = opt.value === clipboardClearSeconds;
@@ -162,12 +163,12 @@ export default function SecurityScreen() {
         </div>
 
         {/* Divider */}
-        <div style={{ height: 1, background: "var(--color-border-subtle)" }} />
+        <SettingsDivider />
 
         {/* Approval toggles */}
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
           <SettingsSwitch label="Password for burn" description="Require password before burning QU" checked={requirePasswordForBurn} onChange={() => updateSettings({ requirePasswordForBurn: !requirePasswordForBurn })} />
-          <Divider />
+          <SettingsDivider />
           <SettingsSwitch label="Biometric for seed reveal" description={isLinux ? "Require quick unlock to view seed" : "Require biometric to view seed"} checked={requireBiometricForSeedReveal} onChange={() => updateSettings({ requireBiometricForSeedReveal: !requireBiometricForSeedReveal })} />
         </div>
 
@@ -177,7 +178,7 @@ export default function SecurityScreen() {
             background: "var(--color-bg-surface)", borderRadius: "var(--radius-card)",
             padding: "var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-3)",
           }}>
-            <SectionLabel>{isLinux ? "Quick unlock" : "Biometric unlock"}</SectionLabel>
+            <SettingsSectionLabel>{isLinux ? "Quick unlock" : "Biometric unlock"}</SettingsSectionLabel>
             {bioEnabled ? (
               <>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: "var(--text-label)", color: "var(--color-status-success)" }}>
@@ -262,22 +263,4 @@ export default function SecurityScreen() {
       </motion.div>
     </AppShell>
   );
-}
-
-/* ── Sub-components ─────────────────────────────────────────── */
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{
-      fontFamily: "var(--font-sans)", fontSize: "var(--text-caption)",
-      fontWeight: 600, color: "var(--color-text-disabled)",
-      textTransform: "none", letterSpacing: "0.06em",
-    }}>
-      {children}
-    </span>
-  );
-}
-
-function Divider() {
-  return <div style={{ height: 1, background: "var(--color-border-subtle)" }} />;
 }
