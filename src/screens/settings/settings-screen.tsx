@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { stepMotion, gesture } from "@/lib/animations";
 import {
-  AltArrowLeft,
   AltArrowRight,
   ShieldCheck,
   WiFiRouterMinimalistic,
@@ -16,6 +15,7 @@ import {
   LockKeyhole,
 } from "@solar-icons/react";
 import { AppShell } from "@/layouts/app-shell";
+import { SettingsPageHeader } from "@/components/settings-page-header";
 import { useUpdater } from "@/hooks/use-updater";
 import { usePersistedStore } from "@/store/persisted";
 import { useSessionStore } from "@/store/session";
@@ -54,19 +54,8 @@ export default function SettingsScreen() {
     { label: "Diagnostics", description: "Runtime state and debug bundle", route: "/settings/diagnostics", icon: <Bug size={22} weight="Linear" />, section: "Info" },
   ];
 
-  const header = (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", position: "relative", padding: "0 var(--space-4)" }}>
-      <button type="button" onClick={() => navigate("/dashboard")} style={{ position: "absolute", left: "var(--space-4)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
-        <AltArrowLeft size={20} style={{ color: "var(--color-text-primary)" }} />
-      </button>
-      <span style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", fontWeight: 500, color: "var(--color-text-display)", whiteSpace: "nowrap" }}>
-        Settings
-      </span>
-    </div>
-  );
-
   return (
-    <AppShell statusBar={header} fullBleed contentStyle={{ padding: "var(--space-4)", height: "100%", overflow: "auto" }}>
+    <AppShell statusBar={<SettingsPageHeader title="Settings" backTo="/dashboard" />} fullBleed contentStyle={{ padding: "var(--space-4)", height: "100%", overflow: "auto" }}>
       <motion.div
         {...stepMotion}
         style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", minHeight: 0 }}
