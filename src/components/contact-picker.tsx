@@ -52,7 +52,7 @@ export function ContactPicker({ open, onClose, onSelect, contacts, accounts = []
   const hasResults = filteredAccounts.length > 0 || filteredContacts.length > 0;
 
   return (
-    <Sheet open={open} onClose={handleClose}>
+    <Sheet open={open} onClose={handleClose} title="Choose recipient">
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
         <input
           aria-label="Search contacts and accounts"
