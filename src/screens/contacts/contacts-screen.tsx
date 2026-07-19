@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { UsersGroupRounded } from "@solar-icons/react";
 import { AppShell } from "@/layouts/app-shell";
 import { ScreenHeader } from "@/components/screen-header";
@@ -14,6 +14,7 @@ import { Identicon } from "@/components/identicon";
 
 export default function ContactsScreen() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const contacts = usePersistedStore((s) => s.contacts);
   const addContact = usePersistedStore((s) => s.addContact);
@@ -102,7 +103,7 @@ export default function ContactsScreen() {
   const statusBar = (
     <ScreenHeader
       title="Contacts"
-      onBack={() => navigate("/dashboard")}
+      onBack={() => navigate(pathname === "/settings/contacts" ? "/settings" : "/dashboard")}
       action={<button type="button" onClick={openAdd} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: "var(--text-body)", color: "var(--color-text-secondary)", padding: 0 }}>+ Add</button>}
     />
   );
