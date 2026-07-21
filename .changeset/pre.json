@@ -6,6 +6,7 @@
   },
   "changesets": [
     "calm-signing-buffers",
-    "glyph-wallet-prerelease-ui"
+    "glyph-wallet-prerelease-ui",
+    "polish-dashboard-search"
   ]
 }
